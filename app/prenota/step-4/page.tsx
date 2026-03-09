@@ -1,0 +1,261 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+import { useBooking } from '../BookingContext';
+import { useEffect, useState } from 'react';
+
+export default function Step4() {
+  const router = useRouter();
+  const { data, updateData } = useBooking();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [fetchingRoom, setFetchingRoom] = useState(true);
+  const [prices, setPrices] = useState<any>(null);
+
+  useEffect(() => {
+    if (!data.tipo_scelta || !data.nome) {
+      router.push('/prenota/step-1');
+    }
+
+    setFetchingRoom(true);
+    fetch('/api/availability')
+      .then(res => res.json())
+      .then(apiData => {
+        setPrices(apiData);
+      })
+      .finally(() => setFetchingRoom(false));
+  }, []);
+
+  const totalPersone = data.adulti + data.bambini;
+
+  // -- CACLULATION ALGORITHM 
+  let total = 0;
+  let breakdown: any[] = [];
+
+  if (!fetchingRoom && prices) {
+    if (data.tipo_scelta === 'pernottamento') {
+      const room = prices.accommodations?.find((a: any) => a.tipo === data.alloggio && a.structure.name === data.struttura);
+      if (room) {
+        const is3Days = data.pacchetto_giorni === '3_giorni';
+        const adultPrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
+        const childPrice = is3Days ? room.prezzo_bambino_3g : room.prezzo_bambino_2g;
+
+        total = (data.adulti * adultPrice) + (data.bambini * childPrice);
+
+        breakdown.push({ label: `${data.adulti} x Adulto (${data.pacchetto_giorni.replace('_', ' ')})`, val: `€ ${(data.adulti * adultPrice).toFixed(2)}` });
+        if (data.bambini > 0) {
+          breakdown.push({ label: `${data.bambini} x Bambino 3-14 anni`, val: `€ ${(data.bambini * childPrice).toFixed(2)}` });
+        }
+      }
+    }
+    else if (data.tipo_scelta === 'pass') {
+      const passConfig = prices.passPrices?.find((p: any) => p.tipo === data.tipo_pass);
+      const adultPrice = passConfig ? passConfig.prezzo : (data.tipo_pass === '3_giorni' ? 15 : 5);
+
+      total = data.adulti * adultPrice;
+
+      breakdown.push({ label: `${data.adulti} x Pass Adulto`, val: `€ ${(data.adulti * adultPrice).toFixed(2)}` });
+      if (data.bambini > 0) {
+        breakdown.push({ label: `${data.bambini} x Pass Bambino`, val: 'Gratis' });
+      }
+    }
+    else if (data.tipo_scelta === 'pasti') {
+      const pConfig = prices.mealOptions?.find((m: any) => m.tipo === 'pranzo');
+      const cConfig = prices.mealOptions?.find((m: any) => m.tipo === 'cena');
+
+      const pPrice = pConfig ? pConfig.prezzo : 20;
+      const cPrice = cConfig ? cConfig.prezzo : 20;
+
+      const numPersone = data.adulti + data.bambini;
+      const pranziTot = data.pranzo_scelto ? numPersone : 0;
+      const ceneTot = data.cena_scelta ? numPersone : 0;
+
+      const pTot = pranziTot * pPrice;
+      const cTot = ceneTot * cPrice;
+      total = pTot + cTot;
+
+      if (pranziTot > 0) breakdown.push({ label: `${pranziTot} x Pranzo`, val: `€ ${pTot.toFixed(2)}` });
+      if (ceneTot > 0) breakdown.push({ label: `${ceneTot} x Cena`, val: `€ ${cTot.toFixed(2)}` });
+    }
+  }
+
+  const handleConfirm = async () => {
+    if (!data.metodo_pagamento) {
+      setError('Seleziona un metodo di pagamento prima di continuare.');
+      return;
+    }
+
+    setLoading(true);
+    setError('');
+    try {
+      const numPersone = data.adulti + data.bambini;
+      const bookingData = {
+        ...data,
+        totale: total,
+        pranzi: data.tipo_scelta === 'pasti' && data.pranzo_scelto ? numPersone : data.pranzi,
+        cene: data.tipo_scelta === 'pasti' && data.cena_scelta ? numPersone : data.cene,
+      };
+
+      const res = await fetch('/api/bookings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(bookingData),
+      });
+
+      const responseData = await res.json();
+
+      if (res.ok) {
+        updateData({ totale: total });
+        router.push('/prenota/step-5');
+      } else {
+        setError(responseData.error || 'Errore durante la prenotazione. Riprova.');
+      }
+    } catch (err) {
+      setError('Errore di connessione col server.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <section className="mb-32 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="flex items-center gap-2 mb-6">
+          <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold">4</span>
+          <h3 className="text-lg font-bold text-slate-900">Riepilogo e Pagamento</h3>
+        </div>
+
+        {error && (
+          <div className="mb-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium flex items-center gap-2 shadow-sm animate-in shake">
+            <span className="material-symbols-outlined text-lg">error</span>
+            {error}
+          </div>
+        )}
+
+        <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden mb-8">
+          <div className="p-6 border-b border-slate-100">
+            <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Dettagli Scelta</h4>
+            <div className="flex justify-between items-center mb-3">
+              <span className="font-bold text-slate-900 text-lg">{data.tipo_scelta.toUpperCase()}</span>
+            </div>
+            {data.tipo_scelta === 'pernottamento' && (
+              <div className="text-sm text-slate-600 mt-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <span className="block mb-1">Struttura: <span className="font-bold text-slate-900">{data.struttura}</span></span>
+                <span className="block mb-1">Camera: <span className="font-bold text-slate-900 capitalize">{data.alloggio}</span></span>
+                <span className="block text-xs text-slate-500 mt-2 italic">Il pass evento è compreso nel prezzo del pacchetto.</span>
+              </div>
+            )}
+            {data.tipo_scelta === 'pass' && (
+              <div className="text-sm text-slate-600 mt-2">
+                Tipologia: <span className="font-bold text-slate-900 capitalize">{data.tipo_pass.replace('_', ' ')}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="p-6 border-b border-slate-100">
+            <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Riepilogo Costi</h4>
+            {breakdown.map((item, idx) => (
+              <div key={idx} className="flex justify-between items-center mb-2">
+                <span className="text-slate-600 font-medium">{item.label}</span>
+                <span className="font-bold text-slate-900">{item.val}</span>
+              </div>
+            ))}
+          </div>
+
+          <div className="p-6 bg-slate-50">
+            <div className="flex justify-between items-center">
+              <span className="text-lg font-bold text-slate-900">Totale Da Pagare</span>
+              <span className="text-3xl font-black text-primary">€ {total.toFixed(2)}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* METODO PAGAMENTO E ALERT INFORMATICO */}
+        <div className="mb-8">
+          <h4 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Metodo di Pagamento</h4>
+          <div className="grid gap-3">
+            <label className={`relative flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-colors ${data.metodo_pagamento === 'bonifico' ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+              <div className="pt-0.5">
+                <input type="radio" className="sr-only" checked={data.metodo_pagamento === 'bonifico'} onChange={() => updateData({ metodo_pagamento: 'bonifico' })} />
+                {data.metodo_pagamento === 'bonifico' ? (
+                  <span className="material-symbols-outlined text-primary">radio_button_checked</span>
+                ) : (
+                  <span className="material-symbols-outlined text-slate-300">radio_button_unchecked</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <span className="font-bold text-slate-900 block flex items-center gap-2">Bonifico Bancario <span className="material-symbols-outlined text-slate-400 text-lg">account_balance</span></span>
+                {data.metodo_pagamento === 'bonifico' && (
+                  <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 font-mono">
+                    IBAN: IT26 I360 8105 1382 1993 9719 944
+                    <br />
+                    Intestato a: VitoMauro Toma Provenzano<br />
+                    Causale: nome cognome e N° Pass.  <br />
+                    Una volta effettuato il pagamento, inviare la conferma/contabile del versamento.
+                  </div>
+                )}
+              </div>
+            </label>
+
+            <label className={`relative flex items-start gap-4 p-4 border-2 rounded-xl cursor-pointer transition-colors ${data.metodo_pagamento === 'qrcode' ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+              <div className="pt-0.5">
+                <input type="radio" className="sr-only" checked={data.metodo_pagamento === 'qrcode'} onChange={() => updateData({ metodo_pagamento: 'qrcode' })} />
+                {data.metodo_pagamento === 'qrcode' ? (
+                  <span className="material-symbols-outlined text-primary">radio_button_checked</span>
+                ) : (
+                  <span className="material-symbols-outlined text-slate-300">radio_button_unchecked</span>
+                )}
+              </div>
+              <div className="flex-1">
+                <span className="font-bold text-slate-900 block flex items-center gap-2">Pagamento Veloce (QR Code) <span className="material-symbols-outlined text-slate-400 text-lg">qr_code_2</span></span>
+                {data.metodo_pagamento === 'qrcode' && (
+                  <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
+                    Potrai pagare istantaneamente con PayPal, PostePay o Satispay scansionando il QR code che comparirà nella pagina di conferma.
+                  </div>
+                )}
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex gap-3">
+          <span className="material-symbols-outlined text-orange-600 mt-0.5">warning</span>
+          <p className="text-sm font-medium text-orange-900 leading-relaxed">
+            <strong>ATTENZIONE!</strong><br /> Se l'importo non verrà saldato entro le 1h dalla conferma, la prenotazione sarà annullata in automatico. <br />In caso di problemi contattare <strong>+39 389 922 59002</strong>
+          </p>
+        </div>
+
+      </section>
+
+      <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-30">
+        <div className="max-w-2xl mx-auto flex gap-4">
+          <button
+            onClick={() => router.back()}
+            disabled={loading}
+            className="w-14 h-14 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
+          >
+            <span className="material-symbols-outlined">arrow_back</span>
+          </button>
+
+          <button
+            onClick={handleConfirm}
+            disabled={loading || fetchingRoom || !data.metodo_pagamento}
+            className="flex-1 bg-primary text-white h-14 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-primary/25 active:scale-95 disabled:opacity-70 transition-all hover:bg-primary/90"
+          >
+            {loading ? (
+              <>
+                <span className="material-symbols-outlined animate-spin">sync</span>
+                <span>Elaborazione...</span>
+              </>
+            ) : (
+              <>
+                <span>Conferma Ordine</span>
+                <span className="material-symbols-outlined">check_circle</span>
+              </>
+            )}
+          </button>
+        </div>
+      </footer>
+    </>
+  );
+}

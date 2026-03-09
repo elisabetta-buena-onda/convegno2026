@@ -1,36 +1,69 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Convegno Booking App 2026
 
-## Getting Started
+Piattaforma Next.js per la gestione delle prenotazioni del Comunità Nuova Pentecoste.
 
-First, run the development server:
+## Stack Tecnologico
+- **Frontend**: Next.js 15 (App Router), React, Tailwind CSS v4
+- **Backend**: API Routes Next.js, Prisma ORM
+- **Database**: PostgreSQL
+- **Autenticazione Admin**: JWT con HttpOnly Cookie gestita via Middleware.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Prerequisiti
+- Node.js >= 18
+- Docker e Docker Compose (per il DB locale)
+- PostgreSQL (se si usa un DB remoto)
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Installazione Locale
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Avvia il database locale:**
+   Se hai Docker installato, puoi far partire un database locale con:
+   ```bash
+   docker-compose up -d
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+2. **Copia l'ambiente:**
+   Il file `.env` è già incluso con parametri di default per Docker.
+   ```env
+   DATABASE_URL="postgresql://postgres:password@localhost:5432/convegno2026?schema=public"
+   ADMIN_USERNAME="admin"
+   ADMIN_PASSWORD="supersecretpassword"
+   SESSION_SECRET="something_very_secret_here"
+   ```
 
-## Learn More
+3. **Inizializza Prisma:**
+   Genera il client prisma, esegui le migrazioni e il seeder.
+   ```bash
+   npm install
+   npx prisma generate
+   npx prisma db push
+   npm run prisma:seed    # Oppure npx tsx prisma/seed.ts
+   ```
 
-To learn more about Next.js, take a look at the following resources:
+4. **Avvia in sviluppo:**
+   ```bash
+   npm run dev
+   ```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+   L'app sarà disponibile su `http://localhost:3000`. L'area admin su `http://localhost:3000/admin/login`.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy su Vercel
 
-## Deploy on Vercel
+L'app è sviluppata nativamente per Edge rendering e Serverless deployment su Vercel.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Esegui il push di questa cartella su un repository GitHub.
+2. Collega il repository a Vercel tramite la Dashboard Vercel.
+3. Inserisci le seguenti **Variabili d'Ambiente** su Vercel:
+   - `DATABASE_URL` (Usa un provider come **Supabase**, **Neon** o Aiven per il Postgres remoto). Attenzione a fornire l'URL in formato connection string (es. pgbouncer).
+   - `ADMIN_USERNAME`
+   - `ADMIN_PASSWORD`
+   - `SESSION_SECRET` (Una stringa alfanumerica random lunga e sicura).
+4. Vercel esegue in automatico `npm run build`. 
+   > **Nota importante:** Assicurati di includere `npx prisma generate` nello script postinstall oppure come parte del comando d'avvio (`"build": "prisma generate && next build"` in `package.json`).
+5. Prima di testare, esegui il seed nel database remoto lanciando:
+   `npx prisma db push` e poi `npx tsx prisma/seed.ts` (dalla tua macchina puntando al remote URL o dalla console Vercel).
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Funzionalità Principali
+- **Controllo Concorrenza Database**: L'API usa `$transaction` per evitare overbooking.
+- **Limitazioni Scelte**: Gli utenti possono selezionare solo "Euroitalia" e "B&B" nei pacchetti predefiniti.
+- **Sconto Famiglia**: Calcolatore automatico che blocca il limite a 10 euro a pass quando il nucleo è ≥ 4 paganti. 
+- **Admin Protetta**: Interfaccia bloccata via Middleware, con esportazione CSV e monitor disbonibilità in read/write.

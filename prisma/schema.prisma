@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Booking {
+  id                String   @id @default(uuid())
+  timestamp         DateTime @default(now())
+  nome              String
+  email             String
+  telefono          String
+  tipo_prenotazione String   // "3_giorni", "2_giorni", "solo_pass", "pasti"
+  struttura         String?  // "Euroitalia", "B&B"
+  alloggio          String?  // tipo di alloggio
+  adulti            Int      @default(0)
+  bambini           Int      @default(0)
+  pranzi            Int      @default(0)
+  cene              Int      @default(0)
+  metodo_pagamento  String?
+  totale            Float
+  stato             String   @default("IN_ATTESA") // "IN_ATTESA", "CONFERMATA", "CANCELLATA"
+
+  participants      Participant[]
+}
+
+model Participant {
+  id         String  @id @default(uuid())
+  booking_id String
+  nome       String
+  tipo       String  // "ADULTO", "BAMBINO"
+  booking    Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
+}
+
+model AccommodationStructure {
+  id   String @id @default(uuid())
+  name String @unique // "Euroitalia", "B&B"
+  types AccommodationType[]
+}
+
+model AccommodationType {
+  id                 String @id @default(uuid())
+  structure_id       String
+  tipo               String // "singola", "doppia", "trullo", ...
+  capienza           Int
+  quantita           Int
+  posti_totali       Int
+  prezzo_adulto_3g   Float  @default(200)
+  prezzo_adulto_2g   Float  @default(160)
+  prezzo_bambino_3g  Float  @default(170)
+  prezzo_bambino_2g  Float  @default(130)
+  structure          AccommodationStructure @relation(fields: [structure_id], references: [id], onDelete: Cascade)
+  inventory          AccommodationInventory[]
+}
+
+model AccommodationInventory {
+  id                   String @id @default(uuid())
+  accommodation_type_id String
+  posti_disponibili    Int
+  accommodation_type   AccommodationType @relation(fields: [accommodation_type_id], references: [id], onDelete: Cascade)
+}
+
+model Availability {
+  id                String @id @default(uuid())
+  tipo              String @unique // "pass_3g", "pass_2g", "solo_pass", "pasti"
+  posti_disponibili Int    @default(500)
+}
+
+model EventPassPrice {
+  id    String @id @default(uuid())
+  tipo  String @unique // "3_giorni", "1_giorno"
+  prezzo Float
+}
+
+model MealOption {
+  id    String @id @default(uuid())
+  tipo  String @unique // "pranzo", "cena"
+  prezzo Float
+}
+
+model AdminUser {
+  id       String @id @default(uuid())
+  username String @unique
+  password String // Hashed
+}
+
+model Document {
+  id        String   @id @default(uuid())
+  filename  String
+  url       String
+  createdAt DateTime @default(now())
+}
+
+model AvailabilityLog {
+  id        String   @id @default(uuid())
+  action    String   // "DECREMENT", "INCREMENT", "SET"
+  tipo      String   // room type id or pass type
+  amount    Int
+  timestamp DateTime @default(now())
+}
