@@ -77,46 +77,106 @@ export async function POST(req: Request) {
 
     // Send actual email using the utility
     try {
+      const isPernotto = data.tipo_scelta === 'Pernotto';
+      const pacchettoLabel = data.pacchetto_giorni === '3_giorni' ? '3 Giorni (Full)' : '2 Giorni';
+      const metodoLabel = booking.metodo_pagamento === 'bonifico' ? 'Bonifico Bancario' : 'Ricarica PostePay';
+      
+      const participantsList = data.participants.map((p: any) => `
+        <li style="margin-bottom: 5px;">
+          <strong>${p.nome}</strong> (${p.tipo})
+        </li>
+      `).join('');
+
+      const camereList = isPernotto ? data.camere.map((c: any) => `
+        <li style="margin-bottom: 5px;">${c.quantita}x ${c.tipo}</li>
+      `).join('') : '';
+
       await sendEmail({
         to: booking.email,
-        subject: 'Conferma Prenotazione - 31°Convocazione Nazionale',
+        subject: `Conferma Prenotazione #${booking.id.slice(0, 8)} - 31°Convocazione Nazionale`,
         html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
-            <h2 style="color: #1a355b;">Conferma Prenotazione</h2>
-            <p>Ciao <strong>${booking.nome}</strong>,</p>
-            <p>Grazie per aver effettuato la prenotazione per il convegno.</p>
-            <div style="background-color: #f6f7f8; padding: 15px; border-radius: 8px; margin: 20px 0;">
-              <p><strong>Identificativo Ordine:</strong> ${booking.id}</p>
-              <p><strong>Importo Totale:</strong> € ${booking.totale.toFixed(2)}</p>
-              <p><strong>Metodo di Pagamento:</strong> ${booking.metodo_pagamento?.toUpperCase() || ''}</p>
+          <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b; background-color: #f8fafc; border-radius: 12px;">
+            <div style="text-align: center; margin-bottom: 30px;">
+              <h1 style="color: #1a355b; margin: 0; font-size: 24px;">Conferma Prenotazione</h1>
+              <p style="color: #64748b; margin-top: 5px;">31° Convocazione Nazionale - Associazione Buena Onda</p>
             </div>
-            ${booking.metodo_pagamento === 'bonifico' ? `
-              <div style="border-left: 4px solid #1a355b; padding-left: 15px; margin: 20px 0;">
-                <p><strong>Coordinate per il Bonifico:</strong></p>
-                <p>IBAN: IT89 0123 4567 8901 2345 6789 012<br>
-                Intestato a: Associazione Buena Onda</p>
+
+            <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e2e8f0;">
+              <h2 style="color: #1a355b; font-size: 18px; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Dettagli Prenotazione</h2>
+              <p>Ciao <strong>${booking.nome}</strong>, la tua prenotazione è stata ricevuta con successo ed è in attesa di conferma (previa verifica del pagamento).</p>
+              
+              <div style="margin-top: 20px;">
+                <p style="margin-bottom: 5px; font-weight: 600; color: #1a355b; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em;">Scelta Selezionata</p>
+                <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px;">
+                  <p style="margin: 0; font-weight: bold; font-size: 16px;">${data.tipo_scelta === 'Pernotto' ? 'PACCHETTO PERNOTTO' : 'SOLO PASS / PASTI'}</p>
+                  ${isPernotto ? `
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #475569;">
+                      <strong>Struttura:</strong> ${data.struttura}<br>
+                      <strong>Pacchetto:</strong> ${pacchettoLabel}<br>
+                      <strong>Camere:</strong>
+                      <ul style="margin: 5px 0 0 0; padding-left: 20px; font-size: 14px;">
+                        ${camereList}
+                      </ul>
+                    </p>
+                  ` : `
+                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #475569;">Tipo: ${data.tipo_pass || 'Pass Evento'}</p>
+                  `}
+                </div>
               </div>
-            ` : ''}
-            ${booking.metodo_pagamento === 'qrcode' ? `
-              <div style="border-left: 4px solid #1a355b; padding-left: 15px; margin: 20px 0;">
-                <p><strong>Coordinate per PostePay:</strong></p>
-                <p>Numero Carta: 4023 6004 1234 5678<br>
-                Codice Fiscale: GNN LBT 79L68 L219F</p>
+
+              <div style="margin-top: 20px;">
+                <p style="margin-bottom: 5px; font-weight: 600; color: #1a355b; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em;">Partecipanti</p>
+                <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #475569;">
+                  ${participantsList}
+                </ul>
               </div>
-            ` : ''}
-            <p style="color: #d9534f; font-weight: bold;">
-              ATTENZIONE: Se l'importo non verrà saldato entro 24h, la prenotazione sarà annullata automaticamente.
-            </p>
-            <p>Per assistenza: +39 379 189 2530</p>
-            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="font-size: 12px; color: #777;">Questo è un messaggio automatico, non rispondere a questa email.</p>
+
+              <div style="margin-top: 20px; border-top: 2px solid #f1f5f9; pt: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
+                   <span style="font-size: 16px; font-weight: 600;">Totale da Pagare:</span>
+                   <span style="font-size: 22px; font-weight: 800; color: #1a355b;">€ ${booking.totale.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
+              <h2 style="color: #1a355b; font-size: 18px; margin-top: 0; margin-bottom: 15px;">Istruzioni per il Pagamento</h2>
+              <p style="font-size: 14px; margin-bottom: 15px;">Hai scelto di pagare tramite <strong>${metodoLabel}</strong>.</p>
+              
+              <div style="background-color: #f8fafc; border-left: 4px solid #1a355b; padding: 15px; border-radius: 4px;">
+                ${booking.metodo_pagamento === 'bonifico' ? `
+                  <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+                    <strong>IBAN:</strong> IT89 0123 4567 8901 2345 6789 012<br>
+                    <strong>Intestato a:</strong> Associazione Buena Onda<br>
+                    <strong>Causale:</strong> Prenotazione Convegno #${booking.id.slice(0, 8)} - ${booking.nome}
+                  </p>
+                ` : `
+                  <p style="margin: 0; font-size: 14px; line-height: 1.6;">
+                    <strong>Numero Carta PostePay:</strong> 4023 6004 1234 5678<br>
+                    <strong>Codice Fiscale:</strong> GNN LBT 79L68 L219F<br>
+                    <strong>Nota:</strong> Effettua la ricarica e invia contabile su WhatsApp.
+                  </p>
+                `}
+              </div>
+
+              <div style="margin-top: 20px; padding: 15px; background-color: #fff1f2; border-radius: 8px; border: 1px solid #fecdd3;">
+                <p style="margin: 0; color: #be123c; font-size: 13px; font-weight: 600; text-align: center;">
+                  ⚠️ ATTENZIONE: Se l'importo non verrà saldato entro 24h, la prenotazione sarà annullata automaticamente per liberare i posti.
+                </p>
+              </div>
+            </div>
+
+            <div style="text-align: center; color: #64748b; font-size: 12px;">
+              <p>Per assistenza: <strong>+39 379 189 2530</strong></p>
+              <p style="margin-top: 10px;">ID Ordine: ${booking.id}</p>
+              <p>© ${new Date().getFullYear()} Associazione Buena Onda - Convegno Nazionale Famiglia</p>
+            </div>
           </div>
         `
       });
       console.log(`Email inviata con successo a ${booking.email}`);
     } catch (emailErr) {
       console.error('Errore invio email conferma:', emailErr);
-      // Non blocchiamo la risposta della prenotazione se l'invio email fallisce
     }
 
     return NextResponse.json({ success: true, booking });

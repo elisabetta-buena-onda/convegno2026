@@ -132,6 +132,15 @@ export default function AdminPrenotazioni() {
                       <p className="text-sm font-bold text-slate-900">{b.nome}</p>
                       <p className="text-xs text-slate-500">{b.email}</p>
                       <p className="text-xs text-slate-400 mt-1 flex items-center gap-1"><span className="material-symbols-outlined text-[10px]">phone</span> {b.telefono}</p>
+                      {b.participants && b.participants.length > 0 && (
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {b.participants.map((p: any, idx: number) => (
+                            <span key={idx} className="px-1.5 py-0.5 bg-slate-100 text-slate-600 rounded text-[9px] font-medium border border-slate-200">
+                              {p.nome}
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </td>
                     <td className="px-4 py-4 align-top">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold inline-block border ${b.tipo_prenotazione.startsWith('Pernotto') ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-amber-50 text-amber-700 border-amber-200'}`}>
@@ -272,10 +281,47 @@ export default function AdminPrenotazioni() {
                 )}
 
                 <div className="grid grid-cols-4 gap-2">
-                  <label className="flex flex-col text-[8px] font-black uppercase text-slate-400">Adulti <input type="number" className="border p-2 rounded text-xs" value={editingBooking.adulti} onChange={e => setEditingBooking({ ...editingBooking, adulti: parseInt(e.target.value) })} /></label>
-                  <label className="flex flex-col text-[8px] font-black uppercase text-slate-400">Bambini <input type="number" className="border p-2 rounded text-xs" value={editingBooking.bambini} onChange={e => setEditingBooking({ ...editingBooking, bambini: parseInt(e.target.value) })} /></label>
+                  <label className="flex flex-col text-[8px] font-black uppercase text-slate-400">Adulti <input type="number" className="border p-2 rounded text-xs" value={editingBooking.adulti} onChange={e => {
+                    const val = parseInt(e.target.value);
+                    setEditingBooking({ ...editingBooking, adulti: val });
+                  }} /></label>
+                  <label className="flex flex-col text-[8px] font-black uppercase text-slate-400">Bambini <input type="number" className="border p-2 rounded text-xs" value={editingBooking.bambini} onChange={e => {
+                    const val = parseInt(e.target.value);
+                    setEditingBooking({ ...editingBooking, bambini: val });
+                  }} /></label>
                   <label className="flex flex-col text-[8px] font-black uppercase text-slate-400">Pranzi <input type="number" className="border p-2 rounded text-xs" value={editingBooking.pranzi} onChange={e => setEditingBooking({ ...editingBooking, pranzi: parseInt(e.target.value) })} /></label>
                   <label className="flex flex-col text-[8px] font-black uppercase text-slate-400">Cene <input type="number" className="border p-2 rounded text-xs" value={editingBooking.cene} onChange={e => setEditingBooking({ ...editingBooking, cene: parseInt(e.target.value) })} /></label>
+                </div>
+
+                <div className="space-y-2 bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase block mb-2">Lista Partecipanti</label>
+                  <div className="space-y-2">
+                    {editingBooking.participants?.map((p: any, idx: number) => (
+                      <div key={idx} className="flex gap-2 items-center">
+                        <input type="text" className="flex-1 border rounded p-2 text-xs" value={p.nome} onChange={e => {
+                          const newParts = [...editingBooking.participants];
+                          newParts[idx].nome = e.target.value;
+                          setEditingBooking({ ...editingBooking, participants: newParts });
+                        }} placeholder="Nome Partecipante" />
+                        <select className="border rounded p-2 text-[10px]" value={p.tipo} onChange={e => {
+                          const newParts = [...editingBooking.participants];
+                          newParts[idx].tipo = e.target.value;
+                          setEditingBooking({ ...editingBooking, participants: newParts });
+                        }}>
+                          <option value="ADULTO">ADULTO</option>
+                          <option value="BAMBINO">BAMBINO</option>
+                        </select>
+                        <button type="button" onClick={() => {
+                          const newParts = editingBooking.participants.filter((_: any, i: number) => i !== idx);
+                          setEditingBooking({ ...editingBooking, participants: newParts });
+                        }} className="text-red-400 hover:text-red-600"><span className="material-symbols-outlined text-sm">delete</span></button>
+                      </div>
+                    ))}
+                    <button type="button" onClick={() => {
+                      const newParts = [...(editingBooking.participants || []), { nome: '', tipo: 'ADULTO' }];
+                      setEditingBooking({ ...editingBooking, participants: newParts });
+                    }} className="w-full py-2 border-2 border-dashed border-slate-200 rounded-lg text-slate-400 hover:text-primary hover:border-primary transition-all text-xs font-bold">+ Aggiungi Partecipante</button>
+                  </div>
                 </div>
 
                 <div className="pt-2 border-t border-slate-200">

@@ -153,7 +153,7 @@ export default function Step4() {
                     <li key={i}>{c.quantita}x {c.tipo}</li>
                   ))}
                 </ul>
-                <span className="block text-xs text-slate-500 mt-2 italic">Il pass evento è compreso nel prezzo del pacchetto.</span>
+                <span className="block text-xs text-slate-500 mt-2 italic">Il pass evento e i pasti sono compresi nel prezzo del pacchetto.</span>
               </div>
             )}
             {data.tipo_scelta === 'pass' && (
@@ -161,6 +161,19 @@ export default function Step4() {
                 Tipologia: <span className="font-bold text-slate-900 capitalize">{data.tipo_pass.replace('_', ' ')}</span>
               </div>
             )}
+          </div>
+
+          <div className="p-6 border-b border-slate-100">
+            <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-4">Partecipanti</h4>
+            <ul className="space-y-2">
+              {data.participants.map((p, i) => (
+                <li key={i} className="flex items-center gap-2 text-sm">
+                  <span className={`w-2 h-2 rounded-full ${p.tipo === 'ADULTO' ? 'bg-primary' : 'bg-success'}`}></span>
+                  <span className="font-bold text-slate-900">{p.nome}</span>
+                  <span className="text-slate-400 text-xs italic">({p.tipo.toLowerCase()})</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className="p-6 border-b border-slate-100">
