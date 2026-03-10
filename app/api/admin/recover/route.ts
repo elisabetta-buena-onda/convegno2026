@@ -19,10 +19,12 @@ export async function POST(request: Request) {
     });
 
     if (!adminUser) {
+      console.log(`[RECOVERY] Utente non trovato per input: ${email}`);
       // Security best practice: don't reveal if user exists or not
-      // Just pretend it succeeded so attackers can't enumerate usernames
-      return NextResponse.json({ success: true, message: 'Istruzioni inviate (se l\'utente esiste)' });
+      return NextResponse.json({ success: true, message: 'Se l\'utente esiste, riceverà le istruzioni.' });
     }
+
+    console.log(`[RECOVERY] Utente trovato: ${adminUser.username}. Generazione token...`);
 
     // Generate secure token
     const token = crypto.randomBytes(32).toString('hex');
@@ -38,9 +40,10 @@ export async function POST(request: Request) {
     });
 
     // Create the magic link
-    // Requires NEXT_PUBLIC_BASE_URL in production, fallback to host header
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || request.headers.get('origin') || 'http://localhost:3000';
     const resetUrl = `${baseUrl}/admin/reset-password?token=${token}`;
+
+    console.log(`[RECOVERY] Link generato: ${resetUrl}`);
 
     const htmlContent = `
       <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
@@ -57,10 +60,11 @@ export async function POST(request: Request) {
       </div>
     `;
 
-    // Attempt to send email (it will mock in console if SMTP is not provided)
-    // We send to the typed email, assuming the username typed was actually an email address
-    // Otherwise fallback to process.env.EMAIL_USER if set, for testing
-    const emailTo = email.includes('@') ? email : (process.env.EMAIL_USER || process.env.SMTP_USER || 'admin@convegno2026.it');
+    // Attempt to send email
+    // If the input was an email, use it. Otherwise use configured admin email or fallback.
+    const emailTo = email.includes('@') ? email : (process.env.SMTP_USER || process.env.EMAIL_USER || 'admin@convegno2026.it');
+
+    console.log(`[RECOVERY] Tentativo di invio email a: ${emailTo}`);
 
     await sendEmail({
       to: emailTo,
@@ -70,7 +74,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true });
   } catch (err: any) {
-    console.error('Password Recovery API Error:', err);
+    console.error('[RECOVERY ERROR]:', err);
     return NextResponse.json({ error: 'Impossibile inviare la richiesta' }, { status: 500 });
   }
 }
