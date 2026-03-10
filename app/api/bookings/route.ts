@@ -97,11 +97,15 @@ export async function POST(req: Request) {
         html: `
           <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b; background-color: #f8fafc; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 30px;">
+              <img src="/logo_CNP.jpg" alt="Logo CNP" style="max-width: 100%; height: auto; margin-bottom: 10px;" />
               <h1 style="color: #1a355b; margin: 0; font-size: 24px;">Conferma Prenotazione</h1>
               <p style="color: #64748b; margin-top: 5px;">31° Convocazione Nazionale </p>
             </div>
 
             <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+            <p>Ciao <strong>${booking.nome}</strong>,</p>
+            <p>E' stata ricevuta con successo ed è in attesa di conferma (previa verifica del pagamento).</p>
+
               <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Dettagli Scelta</h4>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                 <span style="font-weight: bold; color: #0f172a; font-size: 18px;">${data.tipo_scelta.toUpperCase()}</span>
@@ -142,7 +146,7 @@ export async function POST(req: Request) {
 
               <div style="margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 16px; font-weight: bold; color: #0f172a;">Totale Da Pagare</span>
+                  <span style="font-size: 16px; font-weight: bold; color: #0f172a;">Totale Da Pagare </span> <br/>
                   <span style="font-size: 24px; font-weight: 900; color: #1a355b;">€ ${booking.totale.toFixed(2)}</span>
                 </div>
               </div>
