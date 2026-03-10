@@ -101,77 +101,88 @@ export async function POST(req: Request) {
               <p style="color: #64748b; margin-top: 5px;">31° Convocazione Nazionale </p>
             </div>
 
-            <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e2e8f0;">
-              <h2 style="color: #1a355b; font-size: 18px; margin-top: 0; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">Dettagli Prenotazione</h2>
-              <p>Ciao <strong>${booking.nome}</strong>, la tua prenotazione è stata ricevuta con successo ed è in attesa di conferma (previa verifica del pagamento).</p>
-              
-              <div style="margin-top: 20px;">
-                <p style="margin-bottom: 5px; font-weight: 600; color: #1a355b; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em;">Scelta Selezionata</p>
-                <div style="background-color: #f1f5f9; padding: 15px; border-radius: 8px;">
-                  <p style="margin: 0; font-weight: bold; font-size: 16px;">${data.tipo_scelta === 'Pernotto' ? 'PACCHETTO PERNOTTO' : 'SOLO PASS / PASTI'}</p>
-                  ${isPernotto ? `
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #475569;">
-                      <strong>Struttura:</strong> ${data.struttura}<br>
-                      <strong>Pacchetto:</strong> ${pacchettoLabel}<br>
-                      <strong>Camere:</strong>
-                      <ul style="margin: 5px 0 0 0; padding-left: 20px; font-size: 14px;">
-                        ${camereList}
-                      </ul>
-                    </p>
-                  ` : `
-                    <p style="margin: 5px 0 0 0; font-size: 14px; color: #475569;">Tipo: ${data.tipo_pass || 'Pass Evento'}</p>
-                  `}
-                </div>
+            <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+              <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Dettagli Scelta</h4>
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <span style="font-weight: bold; color: #0f172a; font-size: 18px;">${data.tipo_scelta.toUpperCase()}</span>
               </div>
+              
+              ${data.tipo_scelta === 'Pernotto' ? `
+                <div style="font-size: 14px; color: #475569; margin-top: 10px; background-color: #f8fafc; padding: 15px; border-radius: 12px; border: 1px solid #f1f5f9;">
+                  <p style="margin: 0 0 5px 0;">Struttura: <span style="font-weight: bold; color: #0f172a;">${data.struttura}</span></p>
+                  <p style="margin: 0 0 5px 0;">Camere:</p>
+                  <ul style="margin: 5px 0 0 0; padding-left: 20px; color: #0f172a; font-weight: 600;">
+                    ${data.camere.map((c: any) => `<li style="text-transform: capitalize; margin-bottom: 3px;">${c.quantita}x ${c.tipo}</li>`).join('')}
+                  </ul>
+                  <p style="font-size: 12px; color: #64748b; margin: 10px 0 0 0; font-style: italic;">Il pass evento e i pasti sono compresi nel prezzo del pacchetto.</p>
+                </div>
+              ` : `
+                <div style="font-size: 14px; color: #475569; margin-top: 10px;">
+                  Tipologia: <span style="font-weight: bold; color: #0f172a; text-transform: capitalize;">${data.tipo_pass?.replace('_', ' ') || ''}</span>
+                </div>
+              `}
 
-              <div style="margin-top: 20px;">
-                <p style="margin-bottom: 5px; font-weight: 600; color: #1a355b; text-transform: uppercase; font-size: 12px; letter-spacing: 0.05em;">Partecipanti</p>
-                <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #475569;">
-                  ${participantsList}
+              <div style="margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Partecipanti</h4>
+                <ul style="list-style: none; padding: 0; margin: 0; font-size: 14px;">
+                  ${data.participants.map((p: any) => `
+                    <li style="margin-bottom: 8px; display: flex; align-items: center;">
+                       <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #1a355b; display: inline-block; margin-right: 10px;"></span>
+                       <span style="font-weight: bold; color: #0f172a; margin-right: 5px;">${p.nome}</span>
+                       <span style="color: #64748b; font-size: 12px; font-style: italic;">(${p.tipo.toLowerCase()})</span>
+                    </li>
+                  `).join('')}
                 </ul>
               </div>
 
-              <div style="margin-top: 20px; border-top: 2px solid #f1f5f9; pt: 15px;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px;">
-                   <span style="font-size: 16px; font-weight: 600;">Totale da Pagare:</span>
-                   <span style="font-size: 22px; font-weight: 800; color: #1a355b;">€ ${booking.totale.toFixed(2)}</span>
+              <div style="margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
+                <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; margin-top: 0;">Riepilogo Costi</h4>
+                <!-- Cost breakdown can be added here if dynamic values are available in API context -->
+              </div>
+
+              <div style="margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                  <span style="font-size: 16px; font-weight: bold; color: #0f172a;">Totale Da Pagare</span>
+                  <span style="font-size: 24px; font-weight: 900; color: #1a355b;">€ ${booking.totale.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
-            <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; margin-bottom: 25px; border: 1px solid #e2e8f0;">
-              <h2 style="color: #1a355b; font-size: 18px; margin-top: 0; margin-bottom: 15px;">Istruzioni per il Pagamento</h2>
-              <p style="font-size: 14px; margin-bottom: 15px;">Hai scelto di pagare tramite <strong>${metodoLabel}</strong>.</p>
+            <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
+              <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Metodo di Pagamento</h4>
+              <p style="font-size: 14px; margin-bottom: 15px; color: #475569;">Hai scelto di pagare tramite <strong>${metodoLabel}</strong>.</p>
               
-              <div style="background-color: #f8fafc; border-left: 4px solid #1a355b; padding: 15px; border-radius: 4px;">
+              <div style="background-color: #f8fafc; border-left: 4px solid #1a355b; padding: 20px; border-radius: 8px;">
                 ${booking.metodo_pagamento === 'bonifico' ? `
-                  <p style="margin: 0; font-size: 14px; line-height: 1.6;">
-                    <strong>IBAN:</strong> IT26 I360 8105 1382 1993 9719 944
-                    <br />
+                  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #1e293b;">
+                    <strong>IBAN:</strong> IT26 I360 8105 1382 1993 9719 944<br />
                     <strong>Intestato a:</strong> VitoMauro Toma Provenzano<br />
-                    <strong>Causale:</strong> nome cognome e N° Pass.  <br />
-                    <br />Una volta effettuato il pagamento, inviare la ricevuta del bonifico.
+                    <strong>Causale:</strong> ${booking.nome} - N° Pass.<br /><br />
+                    <span style="color: #64748b;">Una volta effettuato il pagamento, inviare la ricevuta del bonifico.</span>
                    </p>
                 ` : `
-                  <p style="margin: 0; font-size: 14px; line-height: 1.6;">
-                    <strong>Numero Carta PostePay:</strong> 5333 1712 1088 0684<br>
-                    <strong>Intestatario:</strong> Toma Provenzano Vitomauro<br>
-                    <strong>Nota:</strong> Effettua la ricarica e invia conferma/contabile su WhatsApp.
+                  <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #1e293b;">
+                    <strong>Numero Carta PostePay:</strong> 5333 1712 1088 0684<br />
+                    <strong>Intestatario:</strong> Toma Provenzano Vitomauro<br /><br />
+                    <span style="color: #64748b;">Effettua la ricarica e invia conferma/contabile su WhatsApp.</span>
                   </p>
                 `}
               </div>
 
-              <div style="margin-top: 20px; padding: 15px; background-color: #fff1f2; border-radius: 8px; border: 1px solid #fecdd3;">
-                <p style="margin: 0; color: #be123c; font-size: 13px; font-weight: 600; text-align: center;">
-                  ⚠️  ATTENZIONE: Se l'importo non verrà saldato entro 24h, la prenotazione sarà annullata automaticamente per liberare i posti.
-                </p>
+              <div style="margin-top: 20px; padding: 15px; background-color: #fff7ed; border-radius: 12px; border: 1px solid #ffedd5; display: flex; align-items: flex-start; gap: 10px;">
+                <div style="color: #ea580c; font-size: 14px; line-height: 1.5;">
+                  <strong style="display: block; margin-bottom: 5px;">⚠️ ATTENZIONE!</strong>
+                  Se l'importo non verrà saldato entro 1h dalla conferma, la prenotazione sarà annullata in automatico.<br />
+                  In caso di problemi contattare <strong>+39 389 922 5900</strong>
+                </div>
               </div>
             </div>
 
             <div style="text-align: center; color: #64748b; font-size: 12px;">
-              <p>Per assistenza: <strong>+39 379 189 2530</strong></p>
+              <p>Per assistenza: <strong>+39 389 922 5900</strong></p>
               <p style="margin-top: 10px;">ID Ordine: ${booking.id}</p>
             </div>
+
           </div>
         `
       });
