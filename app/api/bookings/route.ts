@@ -80,7 +80,7 @@ export async function POST(req: Request) {
       const isPernotto = data.tipo_scelta === 'Pernotto';
       const pacchettoLabel = data.pacchetto_giorni === '3_giorni' ? '3 Giorni (Full)' : '2 Giorni';
       const metodoLabel = booking.metodo_pagamento === 'bonifico' ? 'Bonifico Bancario' : 'Ricarica PostePay';
-      
+
       const participantsList = data.participants.map((p: any) => `
         <li style="margin-bottom: 5px;">
           <strong>${p.nome}</strong> (${p.tipo})
@@ -98,7 +98,7 @@ export async function POST(req: Request) {
           <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b; background-color: #f8fafc; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1a355b; margin: 0; font-size: 24px;">Conferma Prenotazione</h1>
-              <p style="color: #64748b; margin-top: 5px;">31° Convocazione Nazionale - Associazione Buena Onda</p>
+              <p style="color: #64748b; margin-top: 5px;">31° Convocazione Nazionale </p>
             </div>
 
             <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; shadow: 0 1px 3px rgba(0,0,0,0.1); margin-bottom: 25px; border: 1px solid #e2e8f0;">
@@ -146,22 +146,24 @@ export async function POST(req: Request) {
               <div style="background-color: #f8fafc; border-left: 4px solid #1a355b; padding: 15px; border-radius: 4px;">
                 ${booking.metodo_pagamento === 'bonifico' ? `
                   <p style="margin: 0; font-size: 14px; line-height: 1.6;">
-                    <strong>IBAN:</strong> IT89 0123 4567 8901 2345 6789 012<br>
-                    <strong>Intestato a:</strong> Associazione Buena Onda<br>
-                    <strong>Causale:</strong> Prenotazione Convegno #${booking.id.slice(0, 8)} - ${booking.nome}
-                  </p>
+                    <strong>IBAN:</strong> IT26 I360 8105 1382 1993 9719 944
+                    <br />
+                    <strong>Intestato a:</strong> VitoMauro Toma Provenzano<br />
+                    <strong>Causale:</strong> nome cognome e N° Pass.  <br />
+                    <br />Una volta effettuato il pagamento, inviare la ricevuta del bonifico.
+                   </p>
                 ` : `
                   <p style="margin: 0; font-size: 14px; line-height: 1.6;">
-                    <strong>Numero Carta PostePay:</strong> 4023 6004 1234 5678<br>
-                    <strong>Codice Fiscale:</strong> GNN LBT 79L68 L219F<br>
-                    <strong>Nota:</strong> Effettua la ricarica e invia contabile su WhatsApp.
+                    <strong>Numero Carta PostePay:</strong> 5333 1712 1088 0684<br>
+                    <strong>Intestatario:</strong> Toma Provenzano Vitomauro<br>
+                    <strong>Nota:</strong> Effettua la ricarica e invia conferma/contabile su WhatsApp.
                   </p>
                 `}
               </div>
 
               <div style="margin-top: 20px; padding: 15px; background-color: #fff1f2; border-radius: 8px; border: 1px solid #fecdd3;">
                 <p style="margin: 0; color: #be123c; font-size: 13px; font-weight: 600; text-align: center;">
-                  ⚠️ ATTENZIONE: Se l'importo non verrà saldato entro 24h, la prenotazione sarà annullata automaticamente per liberare i posti.
+                  ⚠️  ATTENZIONE: Se l'importo non verrà saldato entro 24h, la prenotazione sarà annullata automaticamente per liberare i posti.
                 </p>
               </div>
             </div>
@@ -169,7 +171,6 @@ export async function POST(req: Request) {
             <div style="text-align: center; color: #64748b; font-size: 12px;">
               <p>Per assistenza: <strong>+39 379 189 2530</strong></p>
               <p style="margin-top: 10px;">ID Ordine: ${booking.id}</p>
-              <p>© ${new Date().getFullYear()} Associazione Buena Onda - Convegno Nazionale Famiglia</p>
             </div>
           </div>
         `
