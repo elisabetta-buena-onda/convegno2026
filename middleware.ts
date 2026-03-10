@@ -5,9 +5,20 @@ import { jwtVerify } from 'jose';
 const JWT_SECRET = new TextEncoder().encode(process.env.SESSION_SECRET || 'fallback_secret');
 
 export async function middleware(request: NextRequest) {
-  // Check if the route is an admin route, ignoring the login page and background apis
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') && !request.nextUrl.pathname.startsWith('/admin/login');
-  const isAdminApiRoute = request.nextUrl.pathname.startsWith('/api/admin') && !request.nextUrl.pathname.startsWith('/api/admin/login');
+  // Whitelist public admin routes
+  const isPublicAdminRoute = 
+    request.nextUrl.pathname.startsWith('/admin/login') ||
+    request.nextUrl.pathname.startsWith('/admin/recupero') ||
+    request.nextUrl.pathname.startsWith('/admin/reset-password');
+
+  const isPublicAdminApiRoute =
+    request.nextUrl.pathname.startsWith('/api/admin/login') ||
+    request.nextUrl.pathname.startsWith('/api/admin/recover') ||
+    request.nextUrl.pathname.startsWith('/api/admin/reset-password') ||
+    request.nextUrl.pathname.startsWith('/api/admin/emergency-reset');
+
+  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin') && !isPublicAdminRoute;
+  const isAdminApiRoute = request.nextUrl.pathname.startsWith('/api/admin') && !isPublicAdminApiRoute;
 
   if (isAdminRoute || isAdminApiRoute) {
     const token = request.cookies.get('admin_session')?.value;
