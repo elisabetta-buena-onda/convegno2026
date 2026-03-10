@@ -4,26 +4,31 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 export type ParticipantInfo = { nome: string; tipo: 'ADULTO' | 'BAMBINO' };
 
+export type RoomSelection = {
+  tipo: string;
+  quantita: number;
+};
+
 export type BookingState = {
   // New categorization
-  tipo_scelta: 'pernottamento' | 'pass' | 'pasti' | '';
+  tipo_scelta: 'Pernotto' | 'pass' | 'pasti' | '';
   pacchetto_giorni: '3_giorni' | '2_giorni' | '';
   tipo_pass: '3_giorni' | '1_giorno' | '';
-  
+
   struttura: string;
-  alloggio: string;
+  camere: RoomSelection[];
   adulti: number;
   bambini: number;
   pranzi: number;
   cene: number;
   pranzo_scelto: boolean;
   cena_scelta: boolean;
-  
+
   participants: ParticipantInfo[];
   nome: string;
   email: string;
   telefono: string;
-  
+
   totale: number;
   metodo_pagamento: string;
 };
@@ -39,7 +44,7 @@ const defaultState: BookingState = {
   pacchetto_giorni: '',
   tipo_pass: '',
   struttura: '',
-  alloggio: '',
+  camere: [],
   adulti: 2,
   bambini: 0,
   pranzi: 0,

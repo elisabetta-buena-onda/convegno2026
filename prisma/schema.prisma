@@ -15,7 +15,7 @@ model Booking {
   telefono          String
   tipo_prenotazione String   // "3_giorni", "2_giorni", "solo_pass", "pasti"
   struttura         String?  // "Euroitalia", "B&B"
-  alloggio          String?  // tipo di alloggio
+  // alloggio          String?  // rimosso per supportare camere multiple
   adulti            Int      @default(0)
   bambini           Int      @default(0)
   pranzi            Int      @default(0)
@@ -25,6 +25,15 @@ model Booking {
   stato             String   @default("IN_ATTESA") // "IN_ATTESA", "CONFERMATA", "CANCELLATA"
 
   participants      Participant[]
+  camere            BookingRoom[]
+}
+
+model BookingRoom {
+  id                 String  @id @default(uuid())
+  booking_id         String
+  accommodation_type String  // "singola", "doppia", ecc.
+  quantita           Int
+  booking            Booking @relation(fields: [booking_id], references: [id], onDelete: Cascade)
 }
 
 model Participant {
@@ -82,9 +91,11 @@ model MealOption {
 }
 
 model AdminUser {
-  id       String @id @default(uuid())
-  username String @unique
-  password String // Hashed
+  id                  String    @id @default(uuid())
+  username            String    @unique
+  password            String    // Hashed
+  resetToken          String?   // For password recovery
+  resetTokenExpiresAt DateTime? // For password recovery
 }
 
 model Document {

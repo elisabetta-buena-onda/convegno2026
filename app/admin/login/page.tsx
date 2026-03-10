@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AdminLogin() {
   const [username, setUsername] = useState('');
@@ -48,7 +49,7 @@ export default function AdminLogin() {
             Accesso Admin
           </h2>
           <p className="mt-2 text-center text-sm text-slate-600">
-            Gestione Convegno Famiglia
+            Gestionale Prenotazioni
           </p>
         </div>
       </div>
@@ -56,7 +57,7 @@ export default function AdminLogin() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="bg-white py-8 px-4 shadow-xl sm:rounded-2xl sm:px-10 border border-slate-100">
           <form className="space-y-6" onSubmit={handleLogin}>
-            
+
             {error && (
               <div className="p-4 rounded-xl bg-red-50 border border-red-100 text-red-700 text-sm font-medium flex items-center gap-2">
                 <span className="material-symbols-outlined text-lg">error</span>
@@ -80,9 +81,14 @@ export default function AdminLogin() {
             </div>
 
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-2">
-                Password
-              </label>
+              <div className="flex justify-between items-center mb-2">
+                <label className="block text-sm font-bold text-slate-700">
+                  Password
+                </label>
+                <Link href="/admin/recupero" className="text-xs font-bold text-primary hover:text-primary/80 transition-colors">
+                  Password dimenticata?
+                </Link>
+              </div>
               <div className="mt-1">
                 <input
                   type="password"

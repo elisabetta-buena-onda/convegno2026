@@ -6,32 +6,39 @@ export async function POST(req: Request) {
     const data = await req.json();
 
     const booking = await prisma.$transaction(async (tx) => {
-      const needsAccommodation = data.tipo_scelta === 'pernottamento';
-      
-      if (needsAccommodation) {
-        const inventory = await tx.accommodationInventory.findFirst({
-          where: { 
-            accommodation_type: {
-              tipo: data.alloggio,
-              structure: { name: data.struttura }
-            }
-          }
-        });
+      const needsAccommodation = data.tipo_scelta === 'Pernotto';
 
-        if (!inventory || inventory.posti_disponibili < 1) {
-          throw new Error('Camera selezionata esaurita.');
+      if (needsAccommodation) {
+        if (!data.camere || data.camere.length === 0) {
+          throw new Error('Nessuna camera selezionata.');
         }
 
-        // Decrement availability
-        await tx.accommodationInventory.update({
-          where: { id: inventory.id },
-          data: { posti_disponibili: { decrement: 1 } }
-        });
+        // Loop and validate/decrement all selected rooms
+        for (const camera of data.camere) {
+          const inventory = await tx.accommodationInventory.findFirst({
+            where: {
+              accommodation_type: {
+                tipo: camera.tipo,
+                structure: { name: data.struttura }
+              }
+            }
+          });
+
+          if (!inventory || inventory.posti_disponibili < camera.quantita) {
+            throw new Error(`La camera ${camera.tipo} non ha sufficiente disponibilità.`);
+          }
+
+          // Decrement availability
+          await tx.accommodationInventory.update({
+            where: { id: inventory.id },
+            data: { posti_disponibili: { decrement: camera.quantita } }
+          });
+        }
       }
 
       // Encode booking detail
       let resolvedPrenotazione = data.tipo_scelta;
-      if (data.tipo_scelta === 'pernottamento') resolvedPrenotazione += `_${data.pacchetto_giorni}`;
+      if (data.tipo_scelta === 'Pernotto') resolvedPrenotazione += `_${data.pacchetto_giorni}`;
       if (data.tipo_scelta === 'pass') resolvedPrenotazione += `_${data.tipo_pass}`;
 
       // Create the booking
@@ -42,7 +49,6 @@ export async function POST(req: Request) {
           telefono: data.telefono,
           tipo_prenotazione: resolvedPrenotazione,
           struttura: needsAccommodation ? data.struttura : null,
-          alloggio: needsAccommodation ? data.alloggio : null,
           adulti: data.adulti,
           bambini: data.bambini,
           pranzi: data.pranzi || 0,
@@ -55,7 +61,13 @@ export async function POST(req: Request) {
               nome: p.nome,
               tipo: p.tipo
             }))
-          }
+          },
+          camere: needsAccommodation ? {
+            create: data.camere.map((c: any) => ({
+              accommodation_type: c.tipo,
+              quantita: c.quantita
+            }))
+          } : undefined
         }
       });
 
@@ -83,7 +95,7 @@ export async function POST(req: Request) {
     `);
 
     return NextResponse.json({ success: true, booking });
-    
+
   } catch (error: any) {
     console.error('Booking Error:', error);
     return NextResponse.json({ error: error.message || 'Errore interno' }, { status: 500 });

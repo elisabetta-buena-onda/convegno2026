@@ -31,14 +31,18 @@ export default function Step5() {
         Ti abbiamo inviato un'email riepilogativa all'indirizzo <strong>{data.email}</strong>, assicurati di controllare anche la cartella spam.
       </p>
 
-      {/* QR CODE PAGAMENTO */}
+      {/* PAGAMENTO POSTEPAY */}
       {data.metodo_pagamento === 'qrcode' && (
-        <div className="bg-white p-6 rounded-2xl w-full max-w-sm mb-6 border border-slate-200">
-          <p className="text-lg font-bold text-slate-900 mb-4 text-center">Inquadra per pagare ora</p>
-          <div className="w-48 h-48 bg-slate-50 mx-auto flex justify-center items-center rounded-xl mb-4 border border-dashed border-slate-300">
-            <span className="material-symbols-outlined text-5xl text-slate-300">qr_code_2</span>
-          </div>
-          <p className="text-xs text-slate-500 text-center leading-relaxed">Se non riesci ad inquadrare dal telefono, <a href="#" className="text-primary font-bold underline">clicca qui per il link diretto</a> al checkout (PayPal, PostePay, Satispay).</p>
+        <div className="bg-white p-6 rounded-2xl w-full max-w-sm mb-6 border border-slate-200 text-left">
+          <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-slate-400">credit_card</span> Dati PostePay
+          </p>
+          <p className="text-slate-900 text-sm font-bold mb-1">CARTA: 5333 1712 1088 0684</p>
+          <p className="text-slate-600 text-sm mb-3">Intestato a: Toma Provenzano Vitomauro</p>
+          <p className="text-slate-500 text-xs italic">
+            Potrai effettuare una ricarica PostePay sia dall' app che in un punto vendita abilitato.<br />
+            Una volta effettuato il pagamento, inviare la conferma/contabile del versamento.
+          </p>
         </div>
       )}
 

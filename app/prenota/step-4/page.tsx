@@ -33,20 +33,26 @@ export default function Step4() {
   let breakdown: any[] = [];
 
   if (!fetchingRoom && prices) {
-    if (data.tipo_scelta === 'pernottamento') {
-      const room = prices.accommodations?.find((a: any) => a.tipo === data.alloggio && a.structure.name === data.struttura);
-      if (room) {
-        const is3Days = data.pacchetto_giorni === '3_giorni';
-        const adultPrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
-        const childPrice = is3Days ? room.prezzo_bambino_3g : room.prezzo_bambino_2g;
+    if (data.tipo_scelta === 'Pernotto') {
+      const is3Days = data.pacchetto_giorni === '3_giorni';
 
-        total = (data.adulti * adultPrice) + (data.bambini * childPrice);
+      data.camere.forEach(cameraScelta => {
+        const room = prices.accommodations?.find((a: any) => a.tipo === cameraScelta.tipo && a.structure.name === data.struttura);
+        if (room) {
+          const adultPrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
+          const childPrice = is3Days ? room.prezzo_bambino_3g : room.prezzo_bambino_2g;
 
-        breakdown.push({ label: `${data.adulti} x Adulto (${data.pacchetto_giorni.replace('_', ' ')})`, val: `€ ${(data.adulti * adultPrice).toFixed(2)}` });
-        if (data.bambini > 0) {
-          breakdown.push({ label: `${data.bambini} x Bambino 3-14 anni`, val: `€ ${(data.bambini * childPrice).toFixed(2)}` });
+          const roomAdultCapacity = Math.min(room.capienza, data.adulti);
+          const roomChildCapacity = Math.min(room.capienza - roomAdultCapacity, data.bambini);
+
+          total += (cameraScelta.quantita * room.capienza * adultPrice); // simplified logic: we charge per bed capacity
+
+          breakdown.push({
+            label: `${cameraScelta.quantita} x ${room.tipo} (${data.pacchetto_giorni.replace('_', ' ')})`,
+            val: `€ ${(cameraScelta.quantita * room.capienza * adultPrice).toFixed(2)}`
+          });
         }
-      }
+      });
     }
     else if (data.tipo_scelta === 'pass') {
       const passConfig = prices.passPrices?.find((p: any) => p.tipo === data.tipo_pass);
@@ -138,10 +144,15 @@ export default function Step4() {
             <div className="flex justify-between items-center mb-3">
               <span className="font-bold text-slate-900 text-lg">{data.tipo_scelta.toUpperCase()}</span>
             </div>
-            {data.tipo_scelta === 'pernottamento' && (
+            {data.tipo_scelta === 'Pernotto' && (
               <div className="text-sm text-slate-600 mt-2 bg-slate-50 p-4 rounded-xl border border-slate-100">
                 <span className="block mb-1">Struttura: <span className="font-bold text-slate-900">{data.struttura}</span></span>
-                <span className="block mb-1">Camera: <span className="font-bold text-slate-900 capitalize">{data.alloggio}</span></span>
+                <span className="block mb-1">Camere: </span>
+                <ul className="list-disc pl-5 mb-1 text-slate-900 font-semibold capitalize">
+                  {data.camere.map((c, i) => (
+                    <li key={i}>{c.quantita}x {c.tipo}</li>
+                  ))}
+                </ul>
                 <span className="block text-xs text-slate-500 mt-2 italic">Il pass evento è compreso nel prezzo del pacchetto.</span>
               </div>
             )}
@@ -186,12 +197,12 @@ export default function Step4() {
               <div className="flex-1">
                 <span className="font-bold text-slate-900 block flex items-center gap-2">Bonifico Bancario <span className="material-symbols-outlined text-slate-400 text-lg">account_balance</span></span>
                 {data.metodo_pagamento === 'bonifico' && (
-                  <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 font-mono">
-                    IBAN: IT26 I360 8105 1382 1993 9719 944
+                  <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-600 ">
+                    <strong>IBAN:</strong> IT26 I360 8105 1382 1993 9719 944
                     <br />
-                    Intestato a: VitoMauro Toma Provenzano<br />
-                    Causale: nome cognome e N° Pass.  <br />
-                    Una volta effettuato il pagamento, inviare la conferma/contabile del versamento.
+                    <strong>Intestato a:</strong> VitoMauro Toma Provenzano<br />
+                    <strong>Causale:</strong> nome cognome e N° Pass.  <br />
+                    <br />Una volta effettuato il pagamento, inviare la conferma/contabile del versamento.
                   </div>
                 )}
               </div>
@@ -207,10 +218,14 @@ export default function Step4() {
                 )}
               </div>
               <div className="flex-1">
-                <span className="font-bold text-slate-900 block flex items-center gap-2">Pagamento Veloce (QR Code) <span className="material-symbols-outlined text-slate-400 text-lg">qr_code_2</span></span>
+                <span className="font-bold text-slate-900 block flex items-center gap-2">Ricarica PostePay <span className="material-symbols-outlined text-slate-400 text-lg">credit_card</span></span>
                 {data.metodo_pagamento === 'qrcode' && (
                   <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg text-sm text-slate-600">
-                    Potrai pagare istantaneamente con PayPal, PostePay o Satispay scansionando il QR code che comparirà nella pagina di conferma.
+                    Potrai effetturare una ricarica PostePay sia dall' app che in un punto vendita abilitato.
+                    <br />
+                    <br /><strong>Numero Carta:</strong> 5333 1712 1088 0684
+                    <br /><strong>Intestatario:</strong> Toma Provenzano Vitomauro
+                    <br /><br />Una volta effettuato il pagamento, inviare la conferma/contabile del versamento.
                   </div>
                 )}
               </div>

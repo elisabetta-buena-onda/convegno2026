@@ -10,7 +10,7 @@ export default function Step2() {
   const [loading, setLoading] = useState(false);
   const [accommodations, setAccommodations] = useState<any[]>([]);
 
-  const isPernottamento = data.tipo_scelta === 'pernottamento';
+  const isPernotto = data.tipo_scelta === 'Pernotto';
 
   useEffect(() => {
     if (!data.tipo_scelta) {
@@ -18,26 +18,33 @@ export default function Step2() {
       return;
     }
 
-    if (isPernottamento) {
+    if (isPernotto) {
       setLoading(true);
       fetch('/api/availability')
         .then(res => res.json())
         .then(apiData => {
           setAccommodations(apiData.accommodations || []);
-
-          if (!data.alloggio && apiData.accommodations?.length > 0) {
-            const firstAvailable = apiData.accommodations.find((a: any) =>
-              a.structure.name === (data.struttura || 'Euroitalia') && a.inventory.length > 0 && a.inventory[0].posti_disponibili > 0
-            );
-            if (firstAvailable) updateData({ alloggio: firstAvailable.tipo });
-          }
         })
         .finally(() => setLoading(false));
     }
   }, []);
 
+  const totalPersone = data.adulti + data.bambini;
+
+  // capacity validation
+  const getTotalCapacity = () => {
+    return data.camere.reduce((acc, curr) => {
+      const room = accommodations.find(a => a.tipo === curr.tipo && a.structure.name === data.struttura);
+      return acc + (room ? room.capienza * curr.quantita : 0);
+    }, 0);
+  };
+  
+  const totalCapacity = getTotalCapacity();
+  const isCapacityValid = totalCapacity >= totalPersone;
+
   const handleContinue = () => {
-    if (isPernottamento && (!data.alloggio || !data.pacchetto_giorni)) return;
+    if (isPernotto && (data.camere.length === 0 || !data.pacchetto_giorni)) return;
+    if (isPernotto && !isCapacityValid) return;
     if (data.tipo_scelta === 'pass' && !data.tipo_pass) return;
     if (data.adulti < 1) return;
     router.push('/prenota/step-3');
@@ -47,7 +54,28 @@ export default function Step2() {
     return accommodations.filter(a => a.structure.name === (data.struttura || 'Euroitalia'));
   };
 
-  const totalPersone = data.adulti + data.bambini;
+  const updateRoomQuantity = (tipo: string, delta: number) => {
+    const existingIndex = data.camere.findIndex(c => c.tipo === tipo);
+    let newCamere = [...data.camere];
+
+    if (existingIndex >= 0) {
+      const newQuantity = newCamere[existingIndex].quantita + delta;
+      if (newQuantity <= 0) {
+        newCamere.splice(existingIndex, 1);
+      } else {
+        newCamere[existingIndex].quantita = newQuantity;
+      }
+    } else if (delta > 0) {
+      newCamere.push({ tipo, quantita: delta });
+    }
+
+    updateData({ camere: newCamere });
+  };
+
+  const getRoomQuantity = (tipo: string) => {
+    const room = data.camere.find(c => c.tipo === tipo);
+    return room ? room.quantita : 0;
+  };
 
   const getRoomPriceLabel = (capienza: number, roomTipo: string) => {
     if (!data.pacchetto_giorni) return '';
@@ -65,18 +93,18 @@ export default function Step2() {
       <section className="mb-24 p-6 rounded-xl bg-white border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
         <div className="flex items-center gap-2 mb-6 border-b border-slate-100 pb-4">
           <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary text-white text-xs font-bold">2</span>
-          <h3 className="text-lg font-bold text-slate-900">Configurazione {data.tipo_scelta === 'pernottamento' && 'Pacchetto'}{data.tipo_scelta === 'pass' && 'Pass'}{data.tipo_scelta === 'pasti' && 'Pasti'}</h3>
+          <h3 className="text-lg font-bold text-slate-900">Configurazione {data.tipo_scelta === 'Pernotto' && 'Pacchetto'}{data.tipo_scelta === 'pass' && 'Pass'}{data.tipo_scelta === 'pasti' && 'Pasti'}</h3>
         </div>
 
         <div className="space-y-8">
 
-          {/* DURATA PER PERNOTTAMENTO */}
-          {isPernottamento && (
+          {/* DURATA PER Pernotto */}
+          {isPernotto && (
             <div>
-              <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Durata Pacchetto</label>
+              <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Seleziona Durata Pacchetto</label>
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <div onClick={() => updateData({ pacchetto_giorni: '3_giorni' })} className={`p-4 border-2 rounded-xl cursor-pointer transition-colors relative ${data.pacchetto_giorni === '3_giorni' ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300'}`}>
-                  <span className="font-bold block text-slate-900">3 Giorni completi</span>
+                  <span className="font-bold block text-slate-900">3 Giorni</span>
                   <span className="text-xs text-slate-500 block mt-1">Dalla cena del Giovedì al pranzo della Domenica</span>
                   {data.pacchetto_giorni === '3_giorni' && <span className="absolute top-2 right-2 material-symbols-outlined text-primary text-sm">check_circle</span>}
                 </div>
@@ -138,7 +166,7 @@ export default function Step2() {
 
           {/* PERSONE (Required for all because we need names for badges) */}
           <div>
-            <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Numero Persone</label>
+            <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">seleziona Numero Persone</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
                 <div className="flex flex-col">
@@ -177,20 +205,20 @@ export default function Step2() {
 
           {/* PERSONE (Required for all because we need names for badges) */}
 
-          {/* PERNOTTAMENTO: CAMERE E STRUTTURA */}
-          {isPernottamento && (
+          {/* Pernotto: CAMERE E STRUTTURA */}
+          {isPernotto && (
             <div className="pt-4 border-t border-slate-100">
               <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Seleziona Struttura</label>
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <label className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-colors ${data.struttura === 'Euroitalia' || !data.struttura ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                  <input type="radio" className="sr-only" checked={data.struttura === 'Euroitalia' || !data.struttura} onChange={() => updateData({ struttura: 'Euroitalia', alloggio: '' })} />
+                  <input type="radio" className="sr-only" checked={data.struttura === 'Euroitalia' || !data.struttura} onChange={() => updateData({ struttura: 'Euroitalia', camere: [] })} />
                   <span className="text-sm font-bold text-slate-900">Euroitalia</span>
                   <span className="text-xs text-slate-500 mt-1">Sede Principale</span>
                   {(data.struttura === 'Euroitalia' || !data.struttura) && <span className="absolute top-2 right-2 material-symbols-outlined text-primary text-sm">radio_button_checked</span>}
                 </label>
 
                 <label className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-colors ${data.struttura === 'B&B' ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                  <input type="radio" className="sr-only" checked={data.struttura === 'B&B'} onChange={() => updateData({ struttura: 'B&B', alloggio: '' })} />
+                  <input type="radio" className="sr-only" checked={data.struttura === 'B&B'} onChange={() => updateData({ struttura: 'B&B', camere: [] })} />
                   <span className="text-sm font-bold text-slate-900">B&amp;B</span>
                   <span className="text-xs text-slate-500 mt-1">Convenzionate</span>
                   {data.struttura === 'B&B' && <span className="absolute top-2 right-2 material-symbols-outlined text-primary text-sm">radio_button_checked</span>}
@@ -201,33 +229,57 @@ export default function Step2() {
                 <div className="text-center p-4 text-slate-500">Caricamento disponibilità camere...</div>
               ) : (
                 <div>
-                  <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Tipologia Sistemazione</label>
+                  <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">seleziona Tipologia Sistemazione</label>
                   {!data.pacchetto_giorni && <p className="text-sm text-red-600 mb-4 bg-red-50 p-3 rounded-lg">Scegli prima la durata del pacchetto in alto per vedere i prezzi.</p>}
 
-                  <div className="grid gap-3">
+                  <div className="grid gap-3 mb-4">
                     {getFilteredRooms().map(room => {
-                      const isAvailable = room.inventory[0]?.posti_disponibili > 0;
+                      const postiDisponibili = room.inventory[0]?.posti_disponibili || 0;
+                      const isAvailable = postiDisponibili > 0;
+                      const quantita = getRoomQuantity(room.tipo);
+                      
                       return (
-                        <label key={room.id} className={`relative flex items-center justify-between p-4 border-2 rounded-xl transition-colors
-                          ${!isAvailable ? 'opacity-50 cursor-not-allowed bg-slate-50 border-slate-200' :
-                            data.alloggio === room.tipo ? 'cursor-pointer border-primary bg-primary/5' : 'cursor-pointer border-slate-200 bg-white hover:border-slate-300'}`}>
-                          <input type="radio" className="sr-only" disabled={!isAvailable || !data.pacchetto_giorni} checked={data.alloggio === room.tipo} onChange={() => updateData({ alloggio: room.tipo })} />
-                          <div>
+                        <div key={room.id} className={`relative flex items-center justify-between p-4 border-2 rounded-xl transition-colors
+                          ${!isAvailable && quantita === 0 ? 'opacity-50 bg-slate-50 border-slate-200' :
+                            quantita > 0 ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                          
+                          <div className="flex-1">
                             <span className="text-md font-bold text-slate-900 capitalize block mb-1">{room.tipo}</span>
                             <span className="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded inline-block mb-1">Capienza: {room.capienza} pers.</span>
+                            <span className="text-xs text-slate-500 font-medium ml-2">{postiDisponibili} disponibili</span>
                             {isAvailable && getRoomPriceLabel(room.capienza, room.tipo) && (
                               <p className="text-sm font-black text-primary mt-1">{getRoomPriceLabel(room.capienza, room.tipo)} <span className="text-xs text-slate-500 font-normal">({data.pacchetto_giorni.replace('_', ' ')})</span></p>
                             )}
                           </div>
-                          {isAvailable ? (
-                            <span className="text-xs font-bold text-green-700 bg-green-100 px-2 py-1 rounded border border-green-200">Disponibile</span>
-                          ) : (
-                            <span className="text-xs font-bold text-red-700 bg-red-100 px-2 py-1 rounded border border-red-200">Esaurita</span>
-                          )}
-                        </label>
+
+                          <div className="flex items-center gap-3 ml-4">
+                            <button 
+                              disabled={quantita <= 0 || !data.pacchetto_giorni}
+                              onClick={() => updateRoomQuantity(room.tipo, -1)} 
+                              className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-primary"
+                            >
+                              <span className="material-symbols-outlined text-base">remove</span>
+                            </button>
+                            <span className="text-base font-bold w-4 text-center text-slate-900">{quantita}</span>
+                            <button 
+                              disabled={quantita >= postiDisponibili || !data.pacchetto_giorni}
+                              onClick={() => updateRoomQuantity(room.tipo, 1)} 
+                              className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-primary"
+                            >
+                              <span className="material-symbols-outlined text-base">add</span>
+                            </button>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
+
+                  {data.camere.length > 0 && !isCapacityValid && (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-medium flex gap-2">
+                       <span className="material-symbols-outlined">error</span>
+                       <span>Le camere selezionate (capienza totale: {totalCapacity}) non sono sufficienti per ospitare tutte le persone indicate ({totalPersone}).</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -248,7 +300,7 @@ export default function Step2() {
           <button
             onClick={handleContinue}
             disabled={
-              (isPernottamento && (!data.alloggio || !data.pacchetto_giorni)) ||
+              (isPernotto && (data.camere.length === 0 || !data.pacchetto_giorni || !isCapacityValid)) ||
               (data.tipo_scelta === 'pass' && !data.tipo_pass) ||
               data.adulti < 1
             }

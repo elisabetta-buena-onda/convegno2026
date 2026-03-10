@@ -5,7 +5,7 @@ export async function GET() {
   try {
     const bookings = await prisma.booking.findMany({
       orderBy: { timestamp: 'desc' },
-      include: { participants: true }
+      include: { participants: true, camere: true }
     });
     return NextResponse.json({ bookings });
   } catch (err: any) {
@@ -20,34 +20,40 @@ export async function POST(req: Request) {
 
     if (id) {
       // UPDATE
-      const oldBooking = await prisma.booking.findUnique({ where: { id } });
+      const oldBooking = await prisma.booking.findUnique({ 
+         where: { id },
+         include: { camere: true }
+      });
       if (!oldBooking) throw new Error("Prenotazione non trovata");
 
       const booking = await prisma.$transaction(async (tx) => {
-        // 1. Determine if inventory needs adjustment
-        const roomChanged = oldBooking.alloggio !== details.alloggio || oldBooking.struttura !== details.struttura;
-        const statusChanged = oldBooking.stato !== details.stato;
-        
-        const wasActive = oldBooking.stato !== 'CANCELLATA' && !!oldBooking.alloggio;
-        const willBeActive = details.stato !== 'CANCELLATA' && !!details.alloggio;
+        // Simple strategy for complex updates: 
+        // 1. Restore all old rooms inventory
+        // 2. Delete old room relations
+        // 3. Decrease new rooms inventory (if active)
+        // 4. Create new room relations
 
-        // Restore old if it was active and (room changed OR status became inactive)
-        if (wasActive && (roomChanged || !willBeActive)) {
-           const oldInv = await tx.accommodationInventory.findFirst({
-             where: { accommodation_type: { tipo: oldBooking.alloggio as string, structure: { name: oldBooking.struttura as string } } }
-           });
-           if (oldInv) await tx.accommodationInventory.update({ where: { id: oldInv.id }, data: { posti_disponibili: { increment: 1 } } });
+        if (oldBooking.stato !== 'CANCELLATA' && oldBooking.struttura) {
+             for (const room of oldBooking.camere) {
+                 const oldInv = await tx.accommodationInventory.findFirst({
+                   where: { accommodation_type: { tipo: room.accommodation_type, structure: { name: oldBooking.struttura } } }
+                 });
+                 if (oldInv) await tx.accommodationInventory.update({ where: { id: oldInv.id }, data: { posti_disponibili: { increment: room.quantita } } });
+             }
         }
 
-        // Occupy new if it will be active and (room changed OR status became active)
-        if (willBeActive && (roomChanged || !wasActive)) {
-           const newInv = await tx.accommodationInventory.findFirst({
-             where: { accommodation_type: { tipo: details.alloggio, structure: { name: details.struttura } } }
-           });
-           if (newInv) {
-              if (newInv.posti_disponibili < 1) throw new Error("Sistemazione esaurita");
-              await tx.accommodationInventory.update({ where: { id: newInv.id }, data: { posti_disponibili: { decrement: 1 } } });
-           }
+        const willBeActive = details.stato !== 'CANCELLATA' && details.struttura && details.camere?.length > 0;
+
+        if (willBeActive) {
+            for (const room of details.camere) {
+                 const newInv = await tx.accommodationInventory.findFirst({
+                   where: { accommodation_type: { tipo: room.tipo || room.accommodation_type, structure: { name: details.struttura } } }
+                 });
+                 if (newInv) {
+                    if (newInv.posti_disponibili < room.quantita) throw new Error(`Sistemazione ${room.tipo || room.accommodation_type} esaurita`);
+                    await tx.accommodationInventory.update({ where: { id: newInv.id }, data: { posti_disponibili: { decrement: room.quantita } } });
+                 }
+            }
         }
 
         const updated = await tx.booking.update({
@@ -58,7 +64,6 @@ export async function POST(req: Request) {
             telefono: details.telefono,
             tipo_prenotazione: details.tipo_prenotazione,
             struttura: details.struttura,
-            alloggio: details.alloggio,
             adulti: parseInt(details.adulti),
             bambini: parseInt(details.bambini),
             pranzi: parseInt(details.pranzi),
@@ -68,10 +73,17 @@ export async function POST(req: Request) {
             metodo_pagamento: details.metodo_pagamento,
             participants: {
               deleteMany: {},
-              create: details.participants.map((p: any) => ({
+              create: details.participants?.map((p: any) => ({
                 nome: p.nome,
                 tipo: p.tipo
-              }))
+              })) || []
+            },
+            camere: {
+              deleteMany: {},
+              create: details.camere?.map((c: any) => ({
+                accommodation_type: c.tipo || c.accommodation_type,
+                quantita: c.quantita
+              })) || []
             }
           }
         });
@@ -81,14 +93,16 @@ export async function POST(req: Request) {
     } else {
       // CREATE MANUAL
       const booking = await prisma.$transaction(async (tx) => {
-        if (details.alloggio && details.struttura) {
-          const inv = await tx.accommodationInventory.findFirst({
-            where: { accommodation_type: { tipo: details.alloggio, structure: { name: details.struttura } } }
-          });
-          if (inv) {
-            if (inv.posti_disponibili < 1) throw new Error("Sistemazione esaurita");
-            await tx.accommodationInventory.update({ where: { id: inv.id }, data: { posti_disponibili: { decrement: 1 } } });
-          }
+        if (details.camere && details.camere.length > 0 && details.struttura) {
+           for (const room of details.camere) {
+              const inv = await tx.accommodationInventory.findFirst({
+                where: { accommodation_type: { tipo: room.tipo || room.accommodation_type, structure: { name: details.struttura } } }
+              });
+              if (inv) {
+                if (inv.posti_disponibili < room.quantita) throw new Error(`Sistemazione ${room.tipo || room.accommodation_type} esaurita`);
+                await tx.accommodationInventory.update({ where: { id: inv.id }, data: { posti_disponibili: { decrement: room.quantita } } });
+              }
+           }
         }
 
         return await tx.booking.create({
@@ -98,7 +112,6 @@ export async function POST(req: Request) {
             telefono: details.telefono,
             tipo_prenotazione: details.tipo_prenotazione,
             struttura: details.struttura,
-            alloggio: details.alloggio,
             adulti: parseInt(details.adulti),
             bambini: parseInt(details.bambini),
             pranzi: parseInt(details.pranzi),
@@ -107,10 +120,16 @@ export async function POST(req: Request) {
             stato: details.stato || 'CONFERMATA',
             metodo_pagamento: details.metodo_pagamento || 'manuale',
             participants: {
-              create: details.participants.map((p: any) => ({
+              create: details.participants?.map((p: any) => ({
                 nome: p.nome,
                 tipo: p.tipo
-              }))
+              })) || []
+            },
+            camere: {
+              create: details.camere?.map((c: any) => ({
+                accommodation_type: c.tipo || c.accommodation_type,
+                quantita: c.quantita
+              })) || []
             }
           }
         });
@@ -129,13 +148,18 @@ export async function DELETE(req: Request) {
     if (!id) throw new Error("ID mancante");
 
     await prisma.$transaction(async (tx) => {
-      const booking = await tx.booking.findUnique({ where: { id } });
-      if (booking && booking.alloggio && booking.struttura) {
+      const booking = await tx.booking.findUnique({ 
+         where: { id },
+         include: { camere: true }
+      });
+      if (booking && booking.camere.length > 0 && booking.struttura) {
         // Restore inventory
-        const inv = await tx.accommodationInventory.findFirst({
-          where: { accommodation_type: { tipo: booking.alloggio, structure: { name: booking.struttura } } }
-        });
-        if (inv) await tx.accommodationInventory.update({ where: { id: inv.id }, data: { posti_disponibili: { increment: 1 } } });
+        for (const room of booking.camere) {
+            const inv = await tx.accommodationInventory.findFirst({
+              where: { accommodation_type: { tipo: room.accommodation_type, structure: { name: booking.struttura } } }
+            });
+            if (inv) await tx.accommodationInventory.update({ where: { id: inv.id }, data: { posti_disponibili: { increment: room.quantita } } });
+        }
       }
       await tx.booking.delete({ where: { id } });
     });
