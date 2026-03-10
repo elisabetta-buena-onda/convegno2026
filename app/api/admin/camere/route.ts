@@ -6,9 +6,12 @@ export async function POST(req: Request) {
   try {
     const data = await req.json();
     
-    // Find structure first
-    let structure = await prisma.accommodationStructure.findUnique({
-      where: { name: data.structureName || 'Euroitalia' } // Default
+    // Find or create structure first to avoid null errors if DB isn't seeded
+    const structureName = data.structureName || 'Euroitalia';
+    let structure = await prisma.accommodationStructure.upsert({
+      where: { name: structureName },
+      update: {},
+      create: { name: structureName }
     });
 
     if (!data.id) {
