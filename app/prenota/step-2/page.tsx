@@ -38,7 +38,7 @@ export default function Step2() {
       return acc + (room ? room.capienza * curr.quantita : 0);
     }, 0);
   };
-  
+
   const totalCapacity = getTotalCapacity();
   const isCapacityValid = totalCapacity >= totalPersone;
 
@@ -46,6 +46,7 @@ export default function Step2() {
     if (isPernotto && (data.camere.length === 0 || !data.pacchetto_giorni)) return;
     if (isPernotto && !isCapacityValid) return;
     if (data.tipo_scelta === 'pass' && !data.tipo_pass) return;
+    if (data.tipo_scelta === 'pasti' && !data.pranzo_scelto && !data.cena_scelta) return;
     if (data.adulti < 1) return;
     router.push('/prenota/step-3');
   };
@@ -84,7 +85,7 @@ export default function Step2() {
 
     const is3Days = data.pacchetto_giorni === '3_giorni';
     let basePrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
-    
+
     // Supplement logic: if only 1 person total, add 30
     if (totalPersone === 1) {
       basePrice += 30;
@@ -185,6 +186,49 @@ export default function Step2() {
             </div>
           </div>
 
+          {/* SELEZIONE PASTI */}
+          {data.tipo_scelta === 'pasti' && (
+            <div className="pt-4 border-t border-slate-100">
+              <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Seleziona Opzioni Pasti</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <label
+                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all relative flex items-center gap-4 ${data.pranzo_scelto ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-[#1a355b]/30 text-[#1a355b] focus:ring-[#1a355b] cursor-pointer"
+                    checked={data.pranzo_scelto}
+                    onChange={() => updateData({ pranzo_scelto: !data.pranzo_scelto })}
+                  />
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary">restaurant</span>
+                    <div>
+                      <span className="font-bold block text-slate-900">Pranzo</span>
+                      <span className="text-xs text-slate-500 block">€ 20,00 a persona</span>
+                    </div>
+                  </div>
+                </label>
+                <label
+                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all relative flex items-center gap-4 ${data.cena_scelta ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                >
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-[#1a355b]/30 text-[#1a355b] focus:ring-[#1a355b] cursor-pointer"
+                    checked={data.cena_scelta}
+                    onChange={() => updateData({ cena_scelta: !data.cena_scelta })}
+                  />
+                  <div className="flex items-center gap-3">
+                    <span className="material-symbols-outlined text-primary">dinner_dining</span>
+                    <div>
+                      <span className="font-bold block text-slate-900">Cena</span>
+                      <span className="text-xs text-slate-500 block">€ 20,00 a persona</span>
+                    </div>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Pernotto: CAMERE E STRUTTURA */}
           {isPernotto && (
             <div className="pt-4 border-t border-slate-100">
@@ -219,7 +263,7 @@ export default function Step2() {
                       const postiDisponibili = room.inventory[0]?.posti_disponibili || 0;
                       const isAvailable = postiDisponibili > 0;
                       const quantita = getRoomQuantity(room.tipo);
-                      
+
                       // Constraint: guests >= min_persone
                       const isOccupancyValid = totalPersone >= (room.min_persone || 1);
                       const isDisabled = !isOccupancyValid || (!isAvailable && quantita === 0);
@@ -228,7 +272,7 @@ export default function Step2() {
                         <div key={room.id} className={`relative flex items-center justify-between p-4 border-2 rounded-xl transition-all
                           ${isDisabled ? 'opacity-50 bg-slate-50 border-slate-200 grayscale' :
                             quantita > 0 ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                          
+
                           <div className="flex-1">
                             <span className="text-md font-bold text-slate-900 capitalize block mb-1">{room.tipo}</span>
                             <div className="flex flex-wrap gap-2 items-center mb-1">
@@ -246,17 +290,17 @@ export default function Step2() {
                           </div>
 
                           <div className="flex items-center gap-3 ml-4">
-                            <button 
+                            <button
                               disabled={quantita <= 0 || !data.pacchetto_giorni}
-                              onClick={() => updateRoomQuantity(room.tipo, -1)} 
+                              onClick={() => updateRoomQuantity(room.tipo, -1)}
                               className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-primary"
                             >
                               <span className="material-symbols-outlined text-base">remove</span>
                             </button>
                             <span className="text-base font-bold w-4 text-center text-slate-900">{quantita}</span>
-                            <button 
+                            <button
                               disabled={!isOccupancyValid || quantita >= postiDisponibili || !data.pacchetto_giorni}
-                              onClick={() => updateRoomQuantity(room.tipo, 1)} 
+                              onClick={() => updateRoomQuantity(room.tipo, 1)}
                               className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-primary"
                             >
                               <span className="material-symbols-outlined text-base">add</span>
@@ -269,8 +313,8 @@ export default function Step2() {
 
                   {data.camere.length > 0 && !isCapacityValid && (
                     <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600 font-medium flex gap-2">
-                       <span className="material-symbols-outlined">error</span>
-                       <span>Le camere selezionate (capienza totale: {totalCapacity}) non sono sufficienti per ospitare tutte le persone indicate ({totalPersone}).</span>
+                      <span className="material-symbols-outlined">error</span>
+                      <span>Le camere selezionate (capienza totale: {totalCapacity}) non sono sufficienti per ospitare tutte le persone indicate ({totalPersone}).</span>
                     </div>
                   )}
                 </div>
@@ -286,7 +330,7 @@ export default function Step2() {
           <button
             onClick={() => router.back()}
             disabled={loading}
-            className="w-14 h-14 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 transition-colors"
+            className="w-14 h-14 rounded-xl border border-slate-200 flex items-center justify-center text-slate-500 hover:bg-slate-50 hover:text-slate-900 transition-colors"
           >
             <span className="material-symbols-outlined">arrow_back</span>
           </button>
@@ -295,6 +339,7 @@ export default function Step2() {
             disabled={
               (isPernotto && (data.camere.length === 0 || !data.pacchetto_giorni || !isCapacityValid)) ||
               (data.tipo_scelta === 'pass' && !data.tipo_pass) ||
+              (data.tipo_scelta === 'pasti' && !data.pranzo_scelto && !data.cena_scelta) ||
               data.adulti < 1
             }
             className="flex-1 bg-primary text-white h-14 rounded-xl font-bold text-lg flex items-center justify-center gap-2 shadow-lg shadow-primary/25 active:scale-95 disabled:opacity-50 disabled:active:scale-100 transition-all hover:bg-primary/90"
