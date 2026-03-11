@@ -148,83 +148,94 @@ export default function Step2() {
           )}
 
           {/* PERSONE */}
-          <div>
-            <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">seleziona Numero Persone</label>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-slate-900">Adulti</span>
-                  <span className="text-xs text-slate-500">Età 14+</span>
+          {data.tipo_scelta !== 'pasti' && (
+            <div>
+              <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">seleziona Numero Persone</label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-900">Adulti</span>
+                    <span className="text-xs text-slate-500">Età 14+</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => updateData({ adulti: Math.max(1, data.adulti - 1) })} className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-base">remove</span>
+                    </button>
+                    <span className="text-base font-bold w-4 text-center text-slate-900">{data.adulti}</span>
+                    <button onClick={() => updateData({ adulti: data.adulti + 1 })} className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-base">add</span>
+                    </button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => updateData({ adulti: Math.max(1, data.adulti - 1) })} className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-base">remove</span>
-                  </button>
-                  <span className="text-base font-bold w-4 text-center text-slate-900">{data.adulti}</span>
-                  <button onClick={() => updateData({ adulti: data.adulti + 1 })} className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-base">add</span>
-                  </button>
-                </div>
-              </div>
 
-              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="flex flex-col">
-                  <span className="text-sm font-bold text-slate-900">Bambini</span>
-                  <span className="text-xs text-slate-500">3 - 14 anni</span>
-                  {data.tipo_scelta === 'pass' && <span className="text-[10px] text-green-600 font-bold">Pass Gratuito</span>}
-                </div>
-                <div className="flex items-center gap-3">
-                  <button onClick={() => updateData({ bambini: Math.max(0, data.bambini - 1) })} className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-base">remove</span>
-                  </button>
-                  <span className="text-base font-bold w-4 text-center text-slate-900">{data.bambini}</span>
-                  <button onClick={() => updateData({ bambini: data.bambini + 1 })} className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
-                    <span className="material-symbols-outlined text-base">add</span>
-                  </button>
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                  <div className="flex flex-col">
+                    <span className="text-sm font-bold text-slate-900">Bambini</span>
+                    <span className="text-xs text-slate-500">3 - 14 anni</span>
+                    {data.tipo_scelta === 'pass' && <span className="text-[10px] text-green-600 font-bold">Pass Gratuito</span>}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => updateData({ bambini: Math.max(0, data.bambini - 1) })} className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-base">remove</span>
+                    </button>
+                    <span className="text-base font-bold w-4 text-center text-slate-900">{data.bambini}</span>
+                    <button onClick={() => updateData({ bambini: data.bambini + 1 })} className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors">
+                      <span className="material-symbols-outlined text-base">add</span>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* SELEZIONE PASTI */}
           {data.tipo_scelta === 'pasti' && (
             <div className="pt-4 border-t border-slate-100">
-              <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Seleziona Opzioni Pasti</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Seleziona Quantità Pasti</label>
+              <div className="space-y-4">
                 <label
-                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all relative flex items-center gap-4 ${data.pranzo_scelto ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
+                  className={`p-6 border-2 rounded-xl cursor-pointer transition-all relative flex flex-col md:flex-row md:items-center justify-between gap-4 ${data.pranzo_scelto ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
                 >
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 rounded border-[#1a355b]/30 text-[#1a355b] focus:ring-[#1a355b] cursor-pointer"
-                    checked={data.pranzo_scelto}
-                    onChange={() => updateData({ pranzo_scelto: !data.pranzo_scelto })}
-                  />
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">restaurant</span>
-                    <div>
-                      <span className="font-bold block text-slate-900">Pranzo</span>
-                      <span className="text-xs text-slate-500 block">€ 20,00 a persona</span>
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="checkbox"
+                      className="w-6 h-6 rounded border-[#1a355b]/30 text-[#1a355b] focus:ring-[#1a355b] cursor-pointer"
+                      checked={data.pranzo_scelto}
+                      onChange={() => updateData({ pranzo_scelto: !data.pranzo_scelto, adulti: 1, bambini: 0, pranzi: !data.pranzo_scelto ? 1 : 0 })}
+                    />
+                    <div className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-primary text-3xl">restaurant</span>
+                      <div>
+                        <span className="font-bold text-lg block text-slate-900"> Pasto (Pranzo/Cena)</span>
+                        <span className="text-sm text-slate-500 block">€ 20,00 a buono</span>
+                      </div>
                     </div>
                   </div>
-                </label>
-                <label
-                  className={`p-4 border-2 rounded-xl cursor-pointer transition-all relative flex items-center gap-4 ${data.cena_scelta ? 'border-primary bg-primary/5' : 'border-slate-200 hover:border-slate-300 bg-white'}`}
-                >
-                  <input
-                    type="checkbox"
-                    className="w-5 h-5 rounded border-[#1a355b]/30 text-[#1a355b] focus:ring-[#1a355b] cursor-pointer"
-                    checked={data.cena_scelta}
-                    onChange={() => updateData({ cena_scelta: !data.cena_scelta })}
-                  />
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-primary">dinner_dining</span>
-                    <div>
-                      <span className="font-bold block text-slate-900">Cena</span>
-                      <span className="text-xs text-slate-500 block">€ 20,00 a persona</span>
+
+                  {data.pranzo_scelto && (
+                    <div className="flex items-center gap-4 bg-white p-2 rounded-lg border border-slate-100 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                      <span className="text-sm font-bold text-slate-600 ml-2">Quantità:</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          type="button"
+                          onClick={() => updateData({ pranzi: Math.max(1, data.pranzi - 1) })}
+                          className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-base">remove</span>
+                        </button>
+                        <span className="text-lg font-bold w-6 text-center text-slate-900">{data.pranzi}</span>
+                        <button
+                          type="button"
+                          onClick={() => updateData({ pranzi: data.pranzi + 1 })}
+                          className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-base">add</span>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </label>
+
               </div>
             </div>
           )}

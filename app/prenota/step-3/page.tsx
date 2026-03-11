@@ -28,6 +28,9 @@ export default function Step3() {
 
   const handleValidation = () => {
     if (!data.nome || !data.email || !data.telefono) return false;
+    // Skip participant names validation for 'pasti' flow as they are not shown/required
+    if (data.tipo_scelta === 'pasti') return true;
+    
     for (const p of data.participants) {
       if (!p.nome) return false;
     }
@@ -76,30 +79,32 @@ export default function Step3() {
           </div>
         </section>
 
-        <section className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
-          <div className="mb-6 border-b border-slate-100 pb-4">
-            <h3 className="text-lg font-bold text-slate-900">Nomi Partecipanti</h3>
-            <p className="text-xs text-slate-500 mt-1">Inserisci i nomi di tutte le persone (necessario per i badge).</p>
-          </div>
+        {data.tipo_scelta !== 'pasti' && (
+          <section className="p-6 rounded-xl bg-white border border-slate-200 shadow-sm">
+            <div className="mb-6 border-b border-slate-100 pb-4">
+              <h3 className="text-lg font-bold text-slate-900">Nomi Partecipanti</h3>
+              <p className="text-xs text-slate-500 mt-1">Inserisci i nomi di tutte le persone (necessario per i badge).</p>
+            </div>
 
-          <div className="space-y-4">
-            {data.participants.map((p, index) => (
-              <div key={index}>
-                <label className="block text-sm font-semibold text-slate-700 mb-1.5 pl-1">
-                  Partecipante {index + 1} <span className="text-xs font-normal text-slate-400 capitalize">({p.tipo.toLowerCase()})</span>
-                </label>
-                <input 
-                  required 
-                  type="text" 
-                  value={p.nome} 
-                  onChange={e => updateParticipant(index, e.target.value)} 
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary outline-none bg-slate-50 focus:bg-white transition-colors text-slate-900" 
-                  placeholder={`Nome ${p.tipo === 'ADULTO' ? 'Adulto' : 'Bambino'}`} 
-                />
-              </div>
-            ))}
-          </div>
-        </section>
+            <div className="space-y-4">
+              {data.participants.map((p, index) => (
+                <div key={index}>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1.5 pl-1">
+                    Partecipante {index + 1} <span className="text-xs font-normal text-slate-400 capitalize">({p.tipo.toLowerCase()})</span>
+                  </label>
+                  <input 
+                    required 
+                    type="text" 
+                    value={p.nome} 
+                    onChange={e => updateParticipant(index, e.target.value)} 
+                    className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-primary outline-none bg-slate-50 focus:bg-white transition-colors text-slate-900" 
+                    placeholder={`Nome ${p.tipo === 'ADULTO' ? 'Adulto' : 'Bambino'}`} 
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
 
         <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_10px_rgba(0,0,0,0.05)] z-30">
           <div className="max-w-2xl mx-auto flex gap-4">

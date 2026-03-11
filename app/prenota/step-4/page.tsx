@@ -72,21 +72,12 @@ export default function Step4() {
     }
     else if (data.tipo_scelta === 'pasti') {
       const pConfig = prices.mealOptions?.find((m: any) => m.tipo === 'pranzo');
-      const cConfig = prices.mealOptions?.find((m: any) => m.tipo === 'cena');
-
       const pPrice = pConfig ? pConfig.prezzo : 20;
-      const cPrice = cConfig ? cConfig.prezzo : 20;
 
-      const numPersone = data.adulti + data.bambini;
-      const pranziTot = data.pranzo_scelto ? numPersone : 0;
-      const ceneTot = data.cena_scelta ? numPersone : 0;
+      const numPasti = data.pranzi || 0;
+      total = numPasti * pPrice;
 
-      const pTot = pranziTot * pPrice;
-      const cTot = ceneTot * cPrice;
-      total = pTot + cTot;
-
-      if (pranziTot > 0) breakdown.push({ label: `${pranziTot} x Pranzo`, val: `€ ${pTot.toFixed(2)}` });
-      if (ceneTot > 0) breakdown.push({ label: `${ceneTot} x Cena`, val: `€ ${cTot.toFixed(2)}` });
+      if (numPasti > 0) breakdown.push({ label: `${numPasti} x Pasto`, val: `€ ${total.toFixed(2)}` });
     }
   }
 
@@ -103,8 +94,8 @@ export default function Step4() {
       const bookingData = {
         ...data,
         totale: total,
-        pranzi: data.tipo_scelta === 'pasti' && data.pranzo_scelto ? numPersone : data.pranzi,
-        cene: data.tipo_scelta === 'pasti' && data.cena_scelta ? numPersone : data.cene,
+        pranzi: data.tipo_scelta === 'pasti' ? data.pranzi : data.pranzi,
+        cene: data.tipo_scelta === 'pasti' ? 0 : data.cene,
       };
 
       const res = await fetch('/api/bookings', {
