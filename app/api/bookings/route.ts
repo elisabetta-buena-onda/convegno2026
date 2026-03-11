@@ -81,20 +81,7 @@ export async function POST(req: Request) {
       const pacchettoLabel = data.pacchetto_giorni === '3_giorni' ? '3 Giorni (Full)' : '2 Giorni';
       const metodoLabel = booking.metodo_pagamento === 'bonifico' ? 'Bonifico Bancario' : 'Ricarica PostePay';
 
-      const participantsList = data.participants.map((p: any) => `
-        <li style="margin-bottom: 5px;">
-          <strong>${p.nome}</strong> (${p.tipo})
-        </li>
-      `).join('');
-
-      const camereList = isPernotto ? data.camere.map((c: any) => `
-        <li style="margin-bottom: 5px;">${c.quantita}x ${c.tipo}</li>
-      `).join('') : '';
-
-      await sendEmail({
-        to: booking.email,
-        subject: `Conferma Prenotazione #${booking.id.slice(0, 8)} - 31°Convocazione Nazionale`,
-        html: `
+      const emailHtml = `
           <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b; background-color: #f8fafc; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 30px;">
               <h1 style="color: #1a355b; margin: 0; font-size: 24px;">Conferma Prenotazione</h1>
@@ -141,18 +128,18 @@ export async function POST(req: Request) {
               <div style="margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
                 <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; margin-top: 0;">Riepilogo Costi</h4>
                 ${(() => {
-                  const numRooms = data.camere?.reduce((acc: number, c: any) => acc + c.quantita, 0) || 0;
-                  const numSingles = Math.max(0, 2 * numRooms - (data.adulti + data.bambini));
-                  if (numSingles > 0) {
-                    return `
+          const numRooms = data.camere?.reduce((acc: number, c: any) => acc + c.quantita, 0) || 0;
+          const numSingles = Math.max(0, 2 * numRooms - (data.adulti + data.bambini));
+          if (numSingles > 0) {
+            return `
                       <div style="display: flex; justify-content: space-between; font-size: 13px; color: #475569; margin-bottom: 5px;">
                         <span>Supplemento Singola (${numSingles} cam.):</span>
                         <span style="font-weight: bold;">€ ${(numSingles * 30).toFixed(2)}</span>
                       </div>
                     `;
-                  }
-                  return '';
-                })()}
+          }
+          return '';
+        })()}
               </div>
 
               <div style="margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 12px;">
@@ -188,20 +175,34 @@ export async function POST(req: Request) {
                 <div style="color: #ea580c; font-size: 14px; line-height: 1.5;">
                   <strong style="display: block; margin-bottom: 5px;">⚠️ ATTENZIONE!</strong>
                   Se l'importo non verrà saldato entro 1h dalla conferma, la prenotazione sarà annullata in automatico.<br />
-                  In caso di problemi contattare <strong>+39 389 922 5900</strong>
+                  <br />In caso di problemi contattaci al numero <strong>+39 379 220 6306</strong> oppure via mail all'indirizzo <strong>comunitanuovapentecostecasaran@gmail.com</strong>
+
                 </div>
               </div>
             </div>
 
             <div style="text-align: center; color: #64748b; font-size: 12px;">
-              <p>Per assistenza: <strong>+39 389 922 5900</strong></p>
+              <p>Per assistenza: <strong>+39 379 220 6306</strong></p>
               <p style="margin-top: 10px;">ID Ordine: ${booking.id}</p>
             </div>
 
           </div>
-        `
+        `;
+
+      await sendEmail({
+        to: booking.email,
+        subject: `Conferma Prenotazione #${booking.id.slice(0, 8)} - 31°Convocazione Nazionale`,
+        html: emailHtml
       });
       console.log(`Email inviata con successo a ${booking.email}`);
+
+      // Send duplicate to admin
+      await sendEmail({
+        to: 'comunitanuovapentecostecasaran@gmail.com',
+        subject: 'Nuova prenotazione convegno 2026',
+        html: emailHtml
+      });
+      console.log(`Email di notifica admin inviata con successo`);
     } catch (emailErr) {
       console.error('Errore invio email conferma:', emailErr);
     }
