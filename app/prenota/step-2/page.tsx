@@ -88,6 +88,31 @@ export default function Step2() {
     return `€${Number(price).toFixed(2)} a persona`;
   };
 
+  const calculateTotalPreview = () => {
+    if (!isPernotto || !data.pacchetto_giorni || data.camere.length === 0) return 0;
+    
+    let total = 0;
+    const is3Days = data.pacchetto_giorni === '3_giorni';
+    
+    data.camere.forEach(c => {
+      const room = accommodations.find(a => a.tipo === c.tipo && a.structure.name === (data.struttura || 'Euroitalia'));
+      if (room) {
+        const adultPrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
+        total += (c.quantita * room.capienza * adultPrice);
+      }
+    });
+
+    // Add single supplement: 30€ for each room that is single-occupancy
+    const numRooms = data.camere.reduce((acc, c) => acc + c.quantita, 0);
+    const numSingles = Math.max(0, 2 * numRooms - totalPersone);
+    total += (numSingles * 30);
+
+    return total;
+  };
+
+  const totalPreview = calculateTotalPreview();
+
+
   return (
     <>
       <section className="mb-24 p-6 rounded-xl bg-white border border-slate-200 shadow-sm animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -280,10 +305,28 @@ export default function Step2() {
                        <span>Le camere selezionate (capienza totale: {totalCapacity}) non sono sufficienti per ospitare tutte le persone indicate ({totalPersone}).</span>
                     </div>
                   )}
+
+                  {totalPreview > 0 && (
+                    <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl flex justify-between items-center animate-in zoom-in duration-300">
+                      <div>
+                        <span className="text-xs font-bold text-primary uppercase tracking-wider block">Prezzo Stimato</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-2xl font-black text-slate-900">€ {totalPreview.toFixed(2)}</span>
+                          {Math.max(0, 2 * (data.camere.reduce((acc, c) => acc + c.quantita, 0)) - totalPersone) > 0 && (
+                            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
+                              <span className="material-symbols-outlined text-[12px]">info</span> Incl. Supplemento Singola
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-medium italic">Escluso eventuali pasti extra</span>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
           )}
+
 
         </div>
       </section>

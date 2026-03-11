@@ -97,7 +97,6 @@ export async function POST(req: Request) {
         html: `
           <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #1e293b; background-color: #f8fafc; border-radius: 12px;">
             <div style="text-align: center; margin-bottom: 30px;">
-              <img src="/logo_CNP.jpg" alt="Logo CNP" style="max-width: 100%; height: auto; margin-bottom: 10px;" />
               <h1 style="color: #1a355b; margin: 0; font-size: 24px;">Conferma Prenotazione</h1>
               <p style="color: #64748b; margin-top: 5px;">31° Convocazione Nazionale </p>
             </div>
@@ -106,9 +105,9 @@ export async function POST(req: Request) {
             <p>Ciao <strong>${booking.nome}</strong>,</p>
             <p>E' stata ricevuta con successo ed è in attesa di conferma (previa verifica del pagamento).</p>
 
-              <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Dettagli Scelta</h4>
+              <h4 style="color: #1a355b; font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Dettagli Scelta</h4>
               <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <span style="font-weight: bold; color: #0f172a; font-size: 18px;">${data.tipo_scelta.toUpperCase()}</span>
+                <span style="font-weight: bold; color: #0f172a; font-size: 14px;">${data.tipo_scelta.toUpperCase()}</span>
               </div>
               
               ${data.tipo_scelta === 'Pernotto' ? `
@@ -127,13 +126,13 @@ export async function POST(req: Request) {
               `}
 
               <div style="margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
-                <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Partecipanti</h4>
+                <h4 style="color: #1a355b; font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Partecipanti</h4>
                 <ul style="list-style: none; padding: 0; margin: 0; font-size: 14px;">
                   ${data.participants.map((p: any) => `
                     <li style="margin-bottom: 8px; display: flex; align-items: center;">
                        <span style="width: 8px; height: 8px; border-radius: 50%; background-color: #1a355b; display: inline-block; margin-right: 10px;"></span>
-                       <span style="font-weight: bold; color: #0f172a; margin-right: 5px;">${p.nome}</span>
-                       <span style="color: #64748b; font-size: 12px; font-style: italic;">(${p.tipo.toLowerCase()})</span>
+                       <span style="font-weight: bold; color: #1e293b; margin-right: 5px;">${p.nome}</span>
+                       <span style="color: #1e293b; font-size: 12px; font-style: italic;">(${p.tipo.toLowerCase()})</span>
                     </li>
                   `).join('')}
                 </ul>
@@ -141,20 +140,32 @@ export async function POST(req: Request) {
 
               <div style="margin-top: 25px; border-top: 1px solid #f1f5f9; padding-top: 20px;">
                 <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; margin-top: 0;">Riepilogo Costi</h4>
-                <!-- Cost breakdown can be added here if dynamic values are available in API context -->
+                ${(() => {
+                  const numRooms = data.camere?.reduce((acc: number, c: any) => acc + c.quantita, 0) || 0;
+                  const numSingles = Math.max(0, 2 * numRooms - (data.adulti + data.bambini));
+                  if (numSingles > 0) {
+                    return `
+                      <div style="display: flex; justify-content: space-between; font-size: 13px; color: #475569; margin-bottom: 5px;">
+                        <span>Supplemento Singola (${numSingles} cam.):</span>
+                        <span style="font-weight: bold;">€ ${(numSingles * 30).toFixed(2)}</span>
+                      </div>
+                    `;
+                  }
+                  return '';
+                })()}
               </div>
 
               <div style="margin-top: 15px; padding: 15px; background-color: #f8fafc; border-radius: 12px;">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
-                  <span style="font-size: 16px; font-weight: bold; color: #0f172a;">Totale Da Pagare </span> <br/>
-                  <span style="font-size: 24px; font-weight: 900; color: #1a355b;">€ ${booking.totale.toFixed(2)}</span>
+                  <span style="font-size: 16px; font-weight: bold; color: #0f172a;">Totale Da Pagare </span> 
+                  <span style="padding-left:20px; font-size: 24px; font-weight: 900; color: #1a355b;">€ ${booking.totale.toFixed(2)}</span>
                 </div>
               </div>
             </div>
 
             <div style="background-color: #ffffff; padding: 25px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px;">
-              <h4 style="color: #64748b; font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Metodo di Pagamento</h4>
-              <p style="font-size: 14px; margin-bottom: 15px; color: #475569;">Hai scelto di pagare tramite <strong>${metodoLabel}</strong>.</p>
+              <h4 style="color: #1a355b; font-size: 16px; font-weight: bold; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 15px; margin-top: 0;">Metodo di Pagamento</h4>
+              <p style="font-size: 14px; margin-bottom: 15px; color: #1e293b;">Hai scelto di pagare tramite <strong>${metodoLabel}</strong>.</p>
               
               <div style="background-color: #f8fafc; border-left: 4px solid #1a355b; padding: 20px; border-radius: 8px;">
                 ${booking.metodo_pagamento === 'bonifico' ? `
@@ -162,13 +173,13 @@ export async function POST(req: Request) {
                     <strong>IBAN:</strong> IT26 I360 8105 1382 1993 9719 944<br />
                     <strong>Intestato a:</strong> VitoMauro Toma Provenzano<br />
                     <strong>Causale:</strong> ${booking.nome} - N° Pass.<br /><br />
-                    <span style="color: #64748b;">Una volta effettuato il pagamento, inviare la ricevuta del bonifico.</span>
+                    <span style="color: #1e293b;">Una volta effettuato il pagamento, inviare la ricevuta del bonifico.</span>
                    </p>
                 ` : `
                   <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #1e293b;">
                     <strong>Numero Carta PostePay:</strong> 5333 1712 1088 0684<br />
                     <strong>Intestatario:</strong> Toma Provenzano Vitomauro<br /><br />
-                    <span style="color: #64748b;">Effettua la ricarica e invia conferma/contabile su WhatsApp.</span>
+                    <span style="color: #1e293b;">Effettua la ricarica e invia conferma/contabile su WhatsApp.</span>
                   </p>
                 `}
               </div>

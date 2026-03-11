@@ -40,12 +40,8 @@ export default function Step4() {
         const room = prices.accommodations?.find((a: any) => a.tipo === cameraScelta.tipo && a.structure.name === data.struttura);
         if (room) {
           const adultPrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
-          const childPrice = is3Days ? room.prezzo_bambino_3g : room.prezzo_bambino_2g;
-
-          const roomAdultCapacity = Math.min(room.capienza, data.adulti);
-          const roomChildCapacity = Math.min(room.capienza - roomAdultCapacity, data.bambini);
-
-          total += (cameraScelta.quantita * room.capienza * adultPrice); // simplified logic: we charge per bed capacity
+          
+          total += (cameraScelta.quantita * room.capienza * adultPrice);
 
           breakdown.push({
             label: `${cameraScelta.quantita} x ${room.tipo} (${data.pacchetto_giorni.replace('_', ' ')})`,
@@ -53,6 +49,18 @@ export default function Step4() {
           });
         }
       });
+
+      // Single Supplement logic
+      const numRooms = data.camere.reduce((acc, c) => acc + c.quantita, 0);
+      const numSingles = Math.max(0, 2 * numRooms - totalPersone);
+      if (numSingles > 0) {
+        const suppTotal = numSingles * 30;
+        total += suppTotal;
+        breakdown.push({
+          label: `Supplemento Singola (${numSingles} cam.)`,
+          val: `€ ${suppTotal.toFixed(2)}`
+        });
+      }
     }
     else if (data.tipo_scelta === 'pass') {
       const passConfig = prices.passPrices?.find((p: any) => p.tipo === data.tipo_pass);
