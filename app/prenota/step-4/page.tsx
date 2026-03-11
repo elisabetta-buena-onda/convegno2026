@@ -35,31 +35,28 @@ export default function Step4() {
   if (!fetchingRoom && prices) {
     if (data.tipo_scelta === 'Pernotto') {
       const is3Days = data.pacchetto_giorni === '3_giorni';
+      const mainRoom = prices.accommodations?.find((a: any) => a.tipo === data.camere[0]?.tipo && a.structure.name === data.struttura);
+      
+      if (mainRoom) {
+        const adultPrice = is3Days ? mainRoom.prezzo_adulto_3g : mainRoom.prezzo_adulto_2g;
+        const childPrice = is3Days ? mainRoom.prezzo_bambino_3g : mainRoom.prezzo_bambino_2g;
+        
+        const adultsTotal = data.adulti * adultPrice;
+        const childrenTotal = data.bambini * (childPrice || 0);
+        total = adultsTotal + childrenTotal;
 
-      data.camere.forEach(cameraScelta => {
-        const room = prices.accommodations?.find((a: any) => a.tipo === cameraScelta.tipo && a.structure.name === data.struttura);
-        if (room) {
-          const adultPrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
-          
-          total += (cameraScelta.quantita * room.capienza * adultPrice);
-
-          breakdown.push({
-            label: `${cameraScelta.quantita} x ${room.tipo} (${data.pacchetto_giorni.replace('_', ' ')})`,
-            val: `€ ${(cameraScelta.quantita * room.capienza * adultPrice).toFixed(2)}`
-          });
+        breakdown.push({ label: `${data.adulti} x Adulto`, val: `€ ${adultsTotal.toFixed(2)}` });
+        if (data.bambini > 0) {
+          breakdown.push({ label: `${data.bambini} x Bambino`, val: `€ ${childrenTotal.toFixed(2)}` });
         }
-      });
-
-      // Single Supplement logic
-      const numRooms = data.camere.reduce((acc, c) => acc + c.quantita, 0);
-      const numSingles = Math.max(0, 2 * numRooms - totalPersone);
-      if (numSingles > 0) {
-        const suppTotal = numSingles * 30;
-        total += suppTotal;
-        breakdown.push({
-          label: `Supplemento Singola (${numSingles} cam.)`,
-          val: `€ ${suppTotal.toFixed(2)}`
-        });
+        
+        const numRooms = data.camere.reduce((acc, c) => acc + c.quantita, 0);
+        const numSingles = Math.max(0, 2 * numRooms - totalPersone);
+        if (numSingles > 0) {
+          const suppTotal = numSingles * 30;
+          total += suppTotal;
+          breakdown.push({ label: `Supplemento Singola (${numSingles})`, val: `€ ${suppTotal.toFixed(2)}` });
+        }
       }
     }
     else if (data.tipo_scelta === 'pass') {
@@ -257,7 +254,7 @@ export default function Step4() {
         <div className="p-4 bg-orange-50 border border-orange-200 rounded-xl flex gap-3">
           <span className="material-symbols-outlined text-orange-600 mt-0.5">warning</span>
           <p className="text-sm font-medium text-orange-900 leading-relaxed">
-            <strong>ATTENZIONE!</strong><br /> Se l'importo non verrà saldato entro le 1h dalla conferma, la prenotazione sarà annullata in automatico. <br />In caso di problemi contattare <strong>+39 389 922 59002</strong>
+            <strong>ATTENZIONE!</strong><br /> Se l'importo non verrà saldato entro le 1h dalla conferma, la prenotazione sarà annullata in automatico. <br />In caso di problemi contattare <strong>+39 389 922 5900</strong>
           </p>
         </div>
 

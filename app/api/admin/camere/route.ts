@@ -21,6 +21,7 @@ export async function POST(req: Request) {
            structure_id: structure!.id,
            tipo: data.tipo,
            capienza: parseInt(data.capienza),
+           min_persone: parseInt(data.min_persone || 1),
            quantita: parseInt(data.quantita),
            posti_totali: parseInt(data.capienza) * parseInt(data.quantita),
            prezzo_adulto_3g: parseFloat(data.prezzo_adulto_3g),
@@ -42,6 +43,7 @@ export async function POST(req: Request) {
          data: {
            tipo: data.tipo,
            capienza: parseInt(data.capienza),
+           min_persone: parseInt(data.min_persone || 1),
            quantita: parseInt(data.quantita),
            posti_totali: parseInt(data.capienza) * parseInt(data.quantita),
            prezzo_adulto_3g: parseFloat(data.prezzo_adulto_3g),

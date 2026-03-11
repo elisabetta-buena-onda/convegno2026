@@ -77,41 +77,26 @@ export default function Step2() {
     return room ? room.quantita : 0;
   };
 
-  const getRoomPriceLabel = (capienza: number, roomTipo: string) => {
+  const getRoomPriceLabel = (roomTipo: string) => {
     if (!data.pacchetto_giorni) return '';
     const room = accommodations.find(a => a.tipo === roomTipo);
     if (!room) return '';
 
     const is3Days = data.pacchetto_giorni === '3_giorni';
-    const price = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
-    if (price == null) return '';
-    return `€${Number(price).toFixed(2)} a persona`;
+    let basePrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
+    
+    // Supplement logic: if only 1 person total, add 30
+    if (totalPersone === 1) {
+      basePrice += 30;
+    }
+
+    if (basePrice == null) return '';
+    return `€${Number(basePrice).toFixed(2)} a persona`;
   };
 
-  const calculateTotalPreview = () => {
-    if (!isPernotto || !data.pacchetto_giorni || data.camere.length === 0) return 0;
-    
-    let total = 0;
-    const is3Days = data.pacchetto_giorni === '3_giorni';
-    
-    data.camere.forEach(c => {
-      const room = accommodations.find(a => a.tipo === c.tipo && a.structure.name === (data.struttura || 'Euroitalia'));
-      if (room) {
-        const adultPrice = is3Days ? room.prezzo_adulto_3g : room.prezzo_adulto_2g;
-        total += (c.quantita * room.capienza * adultPrice);
-      }
-    });
-
-    // Add single supplement: 30€ for each room that is single-occupancy
-    const numRooms = data.camere.reduce((acc, c) => acc + c.quantita, 0);
-    const numSingles = Math.max(0, 2 * numRooms - totalPersone);
-    total += (numSingles * 30);
-
-    return total;
-  };
-
-  const totalPreview = calculateTotalPreview();
-
+  const hasEuroitaliaAvailability = accommodations
+    .filter(a => a.structure.name === 'Euroitalia')
+    .some(a => (a.inventory[0]?.posti_disponibili || 0) > 0);
 
   return (
     <>
@@ -161,35 +146,7 @@ export default function Step2() {
             </div>
           )}
 
-          {/* QUANITA PASTI */}
-          {data.tipo_scelta === 'pasti' && (
-            <div>
-              <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">Acquisto Carnet Pasti</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                <label className={`relative flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-colors ${data.pranzo_scelto ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                  <div>
-                    <span className="text-sm font-bold text-slate-900 block">Pranzi</span>
-                    <span className="text-xs text-slate-500">€ 20,00 l'uno</span>
-                  </div>
-                  <div className="flex items-center">
-                    <input type="checkbox" checked={data.pranzo_scelto} onChange={(e) => updateData({ pranzo_scelto: e.target.checked })} className="w-6 h-6 rounded border-slate-300 text-primary focus:ring-primary shadow-sm cursor-pointer" />
-                  </div>
-                </label>
-
-                <label className={`relative flex items-center justify-between p-4 border-2 rounded-xl cursor-pointer transition-colors ${data.cena_scelta ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                  <div>
-                    <span className="text-sm font-bold text-slate-900 block">Cene</span>
-                    <span className="text-xs text-slate-500">€ 20,00 l'una</span>
-                  </div>
-                  <div className="flex items-center">
-                    <input type="checkbox" checked={data.cena_scelta} onChange={(e) => updateData({ cena_scelta: e.target.checked })} className="w-6 h-6 rounded border-slate-300 text-primary focus:ring-primary shadow-sm cursor-pointer" />
-                  </div>
-                </label>
-              </div>
-            </div>
-          )}
-
-          {/* PERSONE (Required for all because we need names for badges) */}
+          {/* PERSONE */}
           <div>
             <label className="text-sm font-bold text-slate-700 mb-3 block italic uppercase tracking-wider">seleziona Numero Persone</label>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -228,8 +185,6 @@ export default function Step2() {
             </div>
           </div>
 
-          {/* PERSONE (Required for all because we need names for badges) */}
-
           {/* Pernotto: CAMERE E STRUTTURA */}
           {isPernotto && (
             <div className="pt-4 border-t border-slate-100">
@@ -242,12 +197,14 @@ export default function Step2() {
                   {(data.struttura === 'Euroitalia' || !data.struttura) && <span className="absolute top-2 right-2 material-symbols-outlined text-primary text-sm">radio_button_checked</span>}
                 </label>
 
-                <label className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-colors ${data.struttura === 'B&B' ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                  <input type="radio" className="sr-only" checked={data.struttura === 'B&B'} onChange={() => updateData({ struttura: 'B&B', camere: [] })} />
-                  <span className="text-sm font-bold text-slate-900">B&amp;B</span>
-                  <span className="text-xs text-slate-500 mt-1">Convenzionate</span>
-                  {data.struttura === 'B&B' && <span className="absolute top-2 right-2 material-symbols-outlined text-primary text-sm">radio_button_checked</span>}
-                </label>
+                {(!hasEuroitaliaAvailability || data.struttura === 'B&B') && (
+                  <label className={`relative flex flex-col p-4 border-2 rounded-xl cursor-pointer transition-colors ${data.struttura === 'B&B' ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                    <input type="radio" className="sr-only" checked={data.struttura === 'B&B'} onChange={() => updateData({ struttura: 'B&B', camere: [] })} />
+                    <span className="text-sm font-bold text-slate-900">B&amp;B</span>
+                    <span className="text-xs text-slate-500 mt-1">Convenzionate</span>
+                    {data.struttura === 'B&B' && <span className="absolute top-2 right-2 material-symbols-outlined text-primary text-sm">radio_button_checked</span>}
+                  </label>
+                )}
               </div>
 
               {loading ? (
@@ -263,17 +220,28 @@ export default function Step2() {
                       const isAvailable = postiDisponibili > 0;
                       const quantita = getRoomQuantity(room.tipo);
                       
+                      // Constraint: guests >= min_persone
+                      const isOccupancyValid = totalPersone >= (room.min_persone || 1);
+                      const isDisabled = !isOccupancyValid || (!isAvailable && quantita === 0);
+
                       return (
-                        <div key={room.id} className={`relative flex items-center justify-between p-4 border-2 rounded-xl transition-colors
-                          ${!isAvailable && quantita === 0 ? 'opacity-50 bg-slate-50 border-slate-200' :
+                        <div key={room.id} className={`relative flex items-center justify-between p-4 border-2 rounded-xl transition-all
+                          ${isDisabled ? 'opacity-50 bg-slate-50 border-slate-200 grayscale' :
                             quantita > 0 ? 'border-primary bg-primary/5' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
                           
                           <div className="flex-1">
                             <span className="text-md font-bold text-slate-900 capitalize block mb-1">{room.tipo}</span>
-                            <span className="text-xs text-slate-500 font-medium bg-slate-100 px-2 py-1 rounded inline-block mb-1">Capienza: {room.capienza} pers.</span>
-                            <span className="text-xs text-slate-500 font-medium ml-2">{postiDisponibili} disponibili</span>
-                            {isAvailable && getRoomPriceLabel(room.capienza, room.tipo) && (
-                              <p className="text-sm font-black text-primary mt-1">{getRoomPriceLabel(room.capienza, room.tipo)} <span className="text-xs text-slate-500 font-normal">({data.pacchetto_giorni.replace('_', ' ')})</span></p>
+                            <div className="flex flex-wrap gap-2 items-center mb-1">
+                              <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded uppercase tracking-tighter">Capienza: {room.capienza} pers.</span>
+                              <span className="text-[10px] text-slate-500 font-bold bg-slate-100 px-2 py-0.5 rounded uppercase tracking-tighter">{postiDisponibili} disponibili</span>
+                              {!isOccupancyValid && (
+                                <span className="text-[10px] text-red-600 font-bold bg-red-50 px-2 py-0.5 rounded uppercase tracking-tighter flex items-center gap-1">
+                                  <span className="material-symbols-outlined text-[12px]">group_off</span> Minimo {room.min_persone || 1} persone
+                                </span>
+                              )}
+                            </div>
+                            {isAvailable && getRoomPriceLabel(room.tipo) && (
+                              <p className="text-sm font-black text-primary mt-1">{getRoomPriceLabel(room.tipo)} <span className="text-xs text-slate-500 font-normal">({data.pacchetto_giorni.replace('_', ' ')})</span></p>
                             )}
                           </div>
 
@@ -287,7 +255,7 @@ export default function Step2() {
                             </button>
                             <span className="text-base font-bold w-4 text-center text-slate-900">{quantita}</span>
                             <button 
-                              disabled={quantita >= postiDisponibili || !data.pacchetto_giorni}
+                              disabled={!isOccupancyValid || quantita >= postiDisponibili || !data.pacchetto_giorni}
                               onClick={() => updateRoomQuantity(room.tipo, 1)} 
                               className="w-8 h-8 rounded-full border border-primary text-primary flex items-center justify-center hover:bg-primary hover:text-white transition-colors disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-primary"
                             >
@@ -305,28 +273,10 @@ export default function Step2() {
                        <span>Le camere selezionate (capienza totale: {totalCapacity}) non sono sufficienti per ospitare tutte le persone indicate ({totalPersone}).</span>
                     </div>
                   )}
-
-                  {totalPreview > 0 && (
-                    <div className="mt-6 p-4 bg-primary/5 border border-primary/20 rounded-xl flex justify-between items-center animate-in zoom-in duration-300">
-                      <div>
-                        <span className="text-xs font-bold text-primary uppercase tracking-wider block">Prezzo Stimato</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl font-black text-slate-900">€ {totalPreview.toFixed(2)}</span>
-                          {Math.max(0, 2 * (data.camere.reduce((acc, c) => acc + c.quantita, 0)) - totalPersone) > 0 && (
-                            <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-bold flex items-center gap-1">
-                              <span className="material-symbols-outlined text-[12px]">info</span> Incl. Supplemento Singola
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-slate-400 font-medium italic">Escluso eventuali pasti extra</span>
-                    </div>
-                  )}
                 </div>
               )}
             </div>
           )}
-
 
         </div>
       </section>

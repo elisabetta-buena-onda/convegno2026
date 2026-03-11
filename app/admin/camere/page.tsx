@@ -15,6 +15,7 @@ export default function AdminCamere() {
     structureName: 'Euroitalia',
     tipo: '',
     capienza: 0,
+    min_persone: 1,
     quantita: 0,
     posti_disponibili: 0,
     prezzo_adulto_3g: 200,
@@ -44,8 +45,9 @@ export default function AdminCamere() {
       id: room.id,
       structureName: room.structure.name,
       tipo: room.tipo,
-      capienza: room.capienza,
-      quantita: room.quantita,
+      capienza: room.capienza ?? 0,
+      min_persone: room.min_persone ?? 1,
+      quantita: room.quantita ?? 0,
       posti_disponibili: room.inventory[0]?.posti_disponibili || 0,
       prezzo_adulto_3g: room.prezzo_adulto_3g ?? 200,
       prezzo_adulto_2g: room.prezzo_adulto_2g ?? 160,
@@ -62,6 +64,7 @@ export default function AdminCamere() {
       structureName: structureName,
       tipo: '',
       capienza: 2,
+      min_persone: 1,
       quantita: 10,
       posti_disponibili: 10,
       prezzo_adulto_3g: 200,
@@ -69,6 +72,14 @@ export default function AdminCamere() {
       prezzo_bambino_3g: 170,
       prezzo_bambino_2g: 130
     });
+  };
+
+  const updateNumericField = (field: string, value: string, isFloat = false) => {
+    const parsed = isFloat ? parseFloat(value) : parseInt(value);
+    setFormData(prev => ({
+      ...prev,
+      [field]: isNaN(parsed) ? 0 : parsed
+    }));
   };
 
   const handleSave = async () => {
@@ -104,6 +115,20 @@ export default function AdminCamere() {
     }
   };
 
+  const renderInput = (field: keyof typeof formData, label: string, isFloat = false, width = "w-16") => (
+    <label className={`flex flex-col text-xs text-slate-500 font-bold`}>
+      {label}
+      <input 
+        type="number" 
+        min={field.startsWith('prezzo') ? "0" : "1"}
+        step={isFloat ? "0.01" : "1"}
+        className={`border p-2 rounded ${width} text-black mt-1`} 
+        value={isNaN(formData[field] as any) ? '' : formData[field]} 
+        onChange={e => updateNumericField(field, e.target.value, isFloat)} 
+      />
+    </label>
+  );
+
   return (
     <div className="flex flex-col min-h-screen bg-slate-50">
       <header className="sticky top-0 z-10 flex items-center bg-white border-b border-slate-200 p-4 gap-4 shadow-sm">
@@ -137,15 +162,16 @@ export default function AdminCamere() {
                      <div className="p-4 bg-blue-50/50 flex flex-col md:flex-row gap-4">
                         <input type="text" placeholder="Nome Sistemazione (es. Singola)" className="border p-2 rounded w-full flex-1" value={formData.tipo} onChange={e => setFormData({...formData, tipo: e.target.value})} />
                         <div className="flex gap-2">
-                          <label className="flex flex-col text-xs text-slate-500 font-bold">Capienza <input type="number" min="1" className="border p-2 rounded w-20 text-black mt-1" value={formData.capienza} onChange={e => setFormData({...formData, capienza: parseInt(e.target.value)})} /></label>
-                          <label className="flex flex-col text-xs text-slate-500 font-bold">Q.tà Tot<input type="number" min="1" className="border p-2 rounded w-20 text-black mt-1" value={formData.quantita} onChange={e => setFormData({...formData, quantita: parseInt(e.target.value)})} /></label>
-                          <label className="flex flex-col text-xs text-slate-500 font-bold">Disponibili<input type="number" min="0" className="border p-2 rounded w-20 text-black mt-1" value={formData.posti_disponibili} onChange={e => setFormData({...formData, posti_disponibili: parseInt(e.target.value)})} /></label>
+                          {renderInput('capienza', 'Cap')}
+                          {renderInput('min_persone', 'Min')}
+                          {renderInput('quantita', 'Qtà')}
+                          {renderInput('posti_disponibili', 'Disp')}
                         </div>
                         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
-                          <label className="flex flex-col text-[10px] text-slate-400 font-bold">Adul. 3G €<input type="number" step="0.01" className="border p-1.5 rounded text-sm text-black" value={formData.prezzo_adulto_3g} onChange={e => setFormData({...formData, prezzo_adulto_3g: parseFloat(e.target.value)})} /></label>
-                          <label className="flex flex-col text-[10px] text-slate-400 font-bold">Adul. 2G €<input type="number" step="0.01" className="border p-1.5 rounded text-sm text-black" value={formData.prezzo_adulto_2g} onChange={e => setFormData({...formData, prezzo_adulto_2g: parseFloat(e.target.value)})} /></label>
-                          <label className="flex flex-col text-[10px] text-slate-400 font-bold">Bamb. 3G €<input type="number" step="0.01" className="border p-1.5 rounded text-sm text-black" value={formData.prezzo_bambino_3g} onChange={e => setFormData({...formData, prezzo_bambino_3g: parseFloat(e.target.value)})} /></label>
-                          <label className="flex flex-col text-[10px] text-slate-400 font-bold">Bamb. 2G €<input type="number" step="0.01" className="border p-1.5 rounded text-sm text-black" value={formData.prezzo_bambino_2g} onChange={e => setFormData({...formData, prezzo_bambino_2g: parseFloat(e.target.value)})} /></label>
+                          {renderInput('prezzo_adulto_3g', 'Adul. 3G €', true, 'w-full')}
+                          {renderInput('prezzo_adulto_2g', 'Adul. 2G €', true, 'w-full')}
+                          {renderInput('prezzo_bambino_3g', 'Bamb. 3G €', true, 'w-full')}
+                          {renderInput('prezzo_bambino_2g', 'Bamb. 2G €', true, 'w-full')}
                         </div>
                         <div className="flex items-end gap-2 shrink-0">
                            <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded font-bold text-sm">Salva</button>
@@ -163,15 +189,16 @@ export default function AdminCamere() {
                         <div key={room.id} className="p-4 bg-orange-50/50 flex flex-col md:flex-row gap-4 border-l-4 border-orange-400">
                           <input type="text" className="border p-2 rounded w-full flex-1" value={formData.tipo} onChange={e => setFormData({...formData, tipo: e.target.value})} />
                           <div className="flex gap-2">
-                            <label className="flex flex-col text-xs text-slate-500 font-bold">Capienza <input type="number" min="1" className="border p-2 rounded w-20 text-black mt-1" value={formData.capienza} onChange={e => setFormData({...formData, capienza: parseInt(e.target.value)})} /></label>
-                            <label className="flex flex-col text-xs text-slate-500 font-bold">Q.tà Tot<input type="number" min="1" className="border p-2 rounded w-20 text-black mt-1" value={formData.quantita} onChange={e => setFormData({...formData, quantita: parseInt(e.target.value)})} /></label>
-                            <label className="flex flex-col text-xs text-slate-500 font-bold">Disponibili<input type="number" min="0" className="border p-2 rounded w-20 text-black mt-1" value={formData.posti_disponibili} onChange={e => setFormData({...formData, posti_disponibili: parseInt(e.target.value)})} /></label>
+                            {renderInput('capienza', 'Cap')}
+                            {renderInput('min_persone', 'Min')}
+                            {renderInput('quantita', 'Qtà')}
+                            {renderInput('posti_disponibili', 'Disp')}
                           </div>
                           <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 flex-1">
-                            <label className="flex flex-col text-[10px] text-slate-400 font-bold">Adul. 3G €<input type="number" step="0.01" className="border p-1.5 rounded text-sm text-black" value={formData.prezzo_adulto_3g} onChange={e => setFormData({...formData, prezzo_adulto_3g: parseFloat(e.target.value)})} /></label>
-                            <label className="flex flex-col text-[10px] text-slate-400 font-bold">Adul. 2G €<input type="number" step="0.01" className="border p-1.5 rounded text-sm text-black" value={formData.prezzo_adulto_2g} onChange={e => setFormData({...formData, prezzo_adulto_2g: parseFloat(e.target.value)})} /></label>
-                            <label className="flex flex-col text-[10px] text-slate-400 font-bold">Bamb. 3G €<input type="number" step="0.01" className="border p-1.5 rounded text-sm text-black" value={formData.prezzo_bambino_3g} onChange={e => setFormData({...formData, prezzo_bambino_3g: parseFloat(e.target.value)})} /></label>
-                            <label className="flex flex-col text-[10px] text-slate-400 font-bold">Bamb. 2G €<input type="number" step="0.01" className="border p-1.5 rounded text-sm text-black" value={formData.prezzo_bambino_2g} onChange={e => setFormData({...formData, prezzo_bambino_2g: parseFloat(e.target.value)})} /></label>
+                            {renderInput('prezzo_adulto_3g', 'Adul. 3G €', true, 'w-full')}
+                            {renderInput('prezzo_adulto_2g', 'Adul. 2G €', true, 'w-full')}
+                            {renderInput('prezzo_bambino_3g', 'Bamb. 3G €', true, 'w-full')}
+                            {renderInput('prezzo_bambino_2g', 'Bamb. 2G €', true, 'w-full')}
                           </div>
                           <div className="flex items-end gap-2 shrink-0">
                             <button onClick={handleSave} className="bg-green-600 text-white px-4 py-2 rounded font-bold text-sm">Salva</button>
@@ -185,7 +212,7 @@ export default function AdminCamere() {
                       <div key={room.id} className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 hover:bg-slate-50 transition-colors group">
                         <div>
                           <p className="font-bold text-slate-900 capitalize text-lg">{room.tipo}</p>
-                          <p className="text-sm text-slate-500 mt-1">Capienza: {room.capienza} pers. | Totale Camere: {room.quantita}</p>
+                          <p className="text-sm text-slate-500 mt-1">Capienza: {room.capienza} pers. | Minimo: {room.min_persone || 1} pers. | Totale Camere: {room.quantita}</p>
                           <div className="flex gap-4 mt-2 text-[10px] uppercase font-bold text-slate-400">
                              <span>3G: Ad. €{room.prezzo_adulto_3g} / Ba. €{room.prezzo_bambino_3g}</span>
                              <span>2G: Ad. €{room.prezzo_adulto_2g} / Ba. €{room.prezzo_bambino_2g}</span>

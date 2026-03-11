@@ -45,7 +45,7 @@ const defaultState: BookingState = {
   tipo_pass: '',
   struttura: '',
   camere: [],
-  adulti: 2,
+  adulti: 1,
   bambini: 0,
   pranzi: 0,
   cene: 0,

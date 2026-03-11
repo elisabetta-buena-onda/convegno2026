@@ -55,6 +55,7 @@ model AccommodationType {
   structure_id       String
   tipo               String // "singola", "doppia", "trullo", ...
   capienza           Int
+  min_persone        Int    @default(1)
   quantita           Int
   posti_totali       Int
   prezzo_adulto_3g   Float  @default(200)
